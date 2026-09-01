@@ -1,0 +1,62 @@
+name: MSIX Store package
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Four-part Store package version
+        required: true
+        default: 1.0.0.0
+
+permissions:
+  contents: read
+
+jobs:
+  windows-msix:
+    runs-on: windows-2022
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Validate Store identity configuration
+        shell: pwsh
+        env:
+          MSIX_IDENTITY_NAME: ${{ secrets.MSIX_IDENTITY_NAME }}
+          MSIX_PUBLISHER: ${{ secrets.MSIX_PUBLISHER }}
+          MSIX_PUBLISHER_DISPLAY_NAME: ${{ secrets.MSIX_PUBLISHER_DISPLAY_NAME }}
+        run: |
+          if (-not $env:MSIX_IDENTITY_NAME -or
+              -not $env:MSIX_PUBLISHER -or
+              -not $env:MSIX_PUBLISHER_DISPLAY_NAME) {
+            throw "Configure the three MSIX_* repository secrets before running this workflow."
+          }
+
+      - name: Configure
+        run: cmake -S . -B build -A x64
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Package MSIX and MSIX upload
+        id: package
+        shell: pwsh
+        env:
+          MSIX_IDENTITY_NAME: ${{ secrets.MSIX_IDENTITY_NAME }}
+          MSIX_PUBLISHER: ${{ secrets.MSIX_PUBLISHER }}
+          MSIX_PUBLISHER_DISPLAY_NAME: ${{ secrets.MSIX_PUBLISHER_DISPLAY_NAME }}
+        run: |
+          ./tools/package_msix.ps1 `
+            -IdentityName $env:MSIX_IDENTITY_NAME `
+            -Publisher $env:MSIX_PUBLISHER `
+            -PublisherDisplayName $env:MSIX_PUBLISHER_DISPLAY_NAME `
+            -Version "${{ inputs.version }}"
+
+      - name: Upload Store package artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: CaptureView-msix-${{ inputs.version }}-x64
+          path: |
+            dist-msix/*.msix
+            dist-msix/*.msixupload
+          if-no-files-found: error

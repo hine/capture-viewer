@@ -10,7 +10,8 @@ notes that are intentionally kept out of the public-facing README.
 - Released on September 1, 2026 from the public
   [`hine/capture-viewer`](https://github.com/hine/capture-viewer) repository.
 - The annotated `v0.9.0` tag identifies the reviewed public source used for the
-  release build.
+  release build. The private development repository is not tagged as the public
+  release.
 - GitHub Actions reproduced the x64 Release build and published a portable ZIP
   with a separate SHA-256 checksum as
   [CaptureView 0.9.0 Preview](https://github.com/hine/capture-viewer/releases/tag/v0.9.0).
@@ -47,7 +48,7 @@ planned for the stable `1.0.0` release rather than the `0.9.x` preview series.
 | Windows visual styles | Initial verified | Common Controls v6 flat combo boxes and Per-Monitor DPI V2 manifest verified on Windows at 150% |
 | Application icon | Initial verified | A-concept blue CV/USB mark embedded as a seven-size 16–256px ICO; title-bar and Explorer EXE rendering verified on Windows |
 | About/version/license | Initial verified | Context-menu Task Dialog, `0.9.0` version, author/brand text, repository link, MIT license link, and reserved brand-asset notice verified on Windows |
-| Distribution | Preview released | `0.9.0` is published as a GitHub pre-release with an Actions-built portable x64 ZIP, SHA-256 checksum, and full MIT text as `LICENSE.txt`; `1.0.0`/MSIX `1.0.0.0` remains the first stable Store target. Store product name `GdW CaptureView` is reserved |
+| Distribution | Preview released; MSIX foundation verified | `0.9.0` is published as a GitHub pre-release with an Actions-built portable x64 ZIP, SHA-256 checksum, and full MIT text as `LICENSE.txt`. A parameterized `packagedClassicApp` manifest, Store logo set, MakeAppx script, `.msixupload` with symbols, and manual Actions workflow are implemented; local MakeAppx generation passed. Signing, installation, WACK, and Partner Center validation remain. `1.0.0`/MSIX `1.0.0.0` is the first stable Store target; Store product name `GdW CaptureView` is reserved |
 | Manual device refresh | Done | Removal, reconnection, endpoint refresh, format refresh, and available-selection preservation verified on hardware |
 | User settings | Done | `%LOCALAPPDATA%\CaptureView\settings.json` |
 | Logging | Initial | Startup, device counts, and HRESULT failures |

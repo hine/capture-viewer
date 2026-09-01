@@ -1,6 +1,7 @@
 /build/
 /out/
 /dist/
+/dist-msix/
 /.vs/
 /.vscode/
 *.user

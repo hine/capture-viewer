@@ -82,6 +82,37 @@ Actions:
 The script reads the version from `CMakeLists.txt` and writes the package under
 `dist\`. The ZIP contains `CaptureView.exe`, `LICENSE.txt`, and `README.md`.
 
+## Create a Microsoft Store package
+
+The Store packaging workflow uses a public manifest template and injects the
+Partner Center identity at build time. After an x64 Release build, run:
+
+```powershell
+.\tools\package_msix.ps1 `
+  -IdentityName "<Package Identity Name>" `
+  -Publisher "<Package Publisher>" `
+  -PublisherDisplayName "<Publisher display name>" `
+  -Version "1.0.0.0"
+```
+
+The script requires a Windows 10 or Windows 11 SDK and writes an unsigned
+`.msix` plus a Store submission `.msixupload` under `dist-msix\`. The upload
+file includes the Release PDB as an `.appxsym` when symbols are available.
+
+The `MSIX Store package` GitHub Actions workflow accepts the four-part version
+as a manual input and reads these repository secrets:
+
+- `MSIX_IDENTITY_NAME`
+- `MSIX_PUBLISHER`
+- `MSIX_PUBLISHER_DISPLAY_NAME`
+
+The identifiers are package metadata rather than authentication credentials,
+but they are intentionally not hard-coded in this public source tree. Never
+store signing keys, certificate passwords, or Partner Center credentials in
+source. Microsoft signs packages that pass Store certification; locally
+installing an MSIX for testing requires a suitable test signature and trusted
+certificate.
+
 ## If Windows blocks a locally built executable
 
 First confirm that the executable was built from source you reviewed. Do not
@@ -221,6 +252,35 @@ Releaseビルド後、GitHub Actionsと同じZIPおよびSHA-256ファイルを�
 
 スクリプトは`CMakeLists.txt`からバージョンを取得し、`dist\`以下へ出力します。
 ZIPには`CaptureView.exe`、`LICENSE.txt`、`README.md`が含まれます。
+
+## Microsoft Storeパッケージの作成
+
+Storeパッケージでは、公開可能なManifestテンプレートへビルド時にPartner Center
+の製品IDを注入します。x64 Releaseビルド後、次のように実行します。
+
+```powershell
+.\tools\package_msix.ps1 `
+  -IdentityName "<Package Identity Name>" `
+  -Publisher "<Package Publisher>" `
+  -PublisherDisplayName "<Publisher display name>" `
+  -Version "1.0.0.0"
+```
+
+Windows 10またはWindows 11 SDKが必要です。`dist-msix\`以下へ無署名の
+`.msix`とStore提出用`.msixupload`を生成します。Release PDBが存在する場合、
+提出ファイルには`.appxsym`としてシンボルも含まれます。
+
+GitHub Actionsの`MSIX Store package`ワークフローは、4部形式のバージョンを
+手動入力として受け取り、次のRepository secretsを使用します。
+
+- `MSIX_IDENTITY_NAME`
+- `MSIX_PUBLISHER`
+- `MSIX_PUBLISHER_DISPLAY_NAME`
+
+これらの識別値は認証情報ではありませんが、公開ソースには直接記録しない方針
+です。署名鍵、証明書パスワード、Partner Centerの認証情報はソースへ保存しないで
+ください。Store審査を通過したパッケージはMicrosoftが署名します。ローカルで
+MSIXをインストールして試験する場合は、別途テスト署名と信頼済み証明書が必要です。
 
 ## 自分でビルドしたEXEをWindowsがブロックする場合
 
