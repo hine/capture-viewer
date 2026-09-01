@@ -77,6 +77,17 @@ to 100%; manual resizing is stored as **Custom**.
 
 Settings and logs are stored under `%LOCALAPPDATA%\CaptureView\`.
 
+## Permissions and privacy
+
+CaptureView uses camera access to receive video from the selected capture
+device and microphone access to monitor the selected audio input. The Microsoft
+Store version may show Windows permission prompts when these features are first
+used. CaptureView processes media locally and does not record, stream, upload,
+or otherwise transmit captured video or audio.
+
+See the [CaptureView Privacy Policy](PRIVACY.md) for details about permissions,
+local settings and logs, and data removal.
+
 ## Why this project exists
 
 The developer wanted a simple tool that provided the specific capture-viewing
@@ -176,6 +187,17 @@ cmake --build build --config Release
 リサイズした場合は**Custom**として保存します。
 
 設定とログは`%LOCALAPPDATA%\CaptureView\`に保存されます。
+
+## 権限とプライバシー
+
+CaptureViewは、選択したキャプチャデバイスから映像を受け取るためにカメラアクセス、
+選択した音声入力をモニタリングするためにマイクアクセスを使用します。Microsoft
+Store版では、これらの機能を初めて使用するときにWindowsがアクセス許可を求める
+場合があります。映像と音声は端末内で処理され、録画、配信、アップロード、その他
+の外部送信は行いません。
+
+権限、ローカルの設定・ログ、データ削除については
+[CaptureViewプライバシーポリシー](PRIVACY.md)を参照してください。
 
 ## 開発の経緯
 

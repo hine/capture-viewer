@@ -116,6 +116,10 @@ source. Microsoft signs packages that pass Store certification; locally
 installing an MSIX for testing requires a suitable test signature and trusted
 certificate.
 
+See [Testing the CaptureView MSIX package](msix-testing.md) for the local
+test-signing findings, permission prompts, application-data behavior, and
+certificate cleanup requirements.
+
 ## If Windows blocks a locally built executable
 
 First confirm that the executable was built from source you reviewed. Do not
@@ -286,6 +290,9 @@ GitHub Actionsの`MSIX Store package`ワークフローは、4部形式のバー
 です。署名鍵、証明書パスワード、Partner Centerの認証情報はソースへ保存しないで
 ください。Store審査を通過したパッケージはMicrosoftが署名します。ローカルで
 MSIXをインストールして試験する場合は、別途テスト署名と信頼済み証明書が必要です。
+
+ローカルのテスト署名、アクセス許可、アプリケーションデータ、証明書撤去に関する
+確認事項は[CaptureView MSIXパッケージのテスト](msix-testing.md)を参照してください。
 
 ## 自分でビルドしたEXEをWindowsがブロックする場合
 
