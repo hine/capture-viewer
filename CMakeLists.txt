@@ -25,6 +25,14 @@ target_compile_definitions(CaptureView PRIVATE
 target_include_directories(CaptureView PRIVATE src)
 target_link_libraries(CaptureView PRIVATE comctl32 d2d1 d3d11 d3dcompiler dwrite dwmapi dxgi mf mfplat mfreadwrite mfuuid mmdevapi ole32 propsys shell32 uxtheme)
 if(MSVC)
-  target_compile_options(CaptureView PRIVATE /W4 /permissive- /EHsc /utf-8)
-  target_link_options(CaptureView PRIVATE /SUBSYSTEM:WINDOWS)
+  target_compile_options(CaptureView PRIVATE
+    /W4 /permissive- /EHsc /utf-8
+    "$<$<CONFIG:Release>:/Zi>"
+  )
+  target_link_options(CaptureView PRIVATE
+    /SUBSYSTEM:WINDOWS
+    "$<$<CONFIG:Release>:/DEBUG:FULL>"
+    "$<$<CONFIG:Release>:/OPT:REF>"
+    "$<$<CONFIG:Release>:/OPT:ICF>"
+  )
 endif()

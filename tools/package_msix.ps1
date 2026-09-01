@@ -10,7 +10,8 @@ param(
 
     [string]$Version = "1.0.0.0",
     [string]$BuildDirectory = "build",
-    [string]$OutputDirectory = "dist-msix"
+    [string]$OutputDirectory = "dist-msix",
+    [switch]$RequireSymbols
 )
 
 $ErrorActionPreference = "Stop"
@@ -91,7 +92,14 @@ if ($LASTEXITCODE -ne 0) {
     throw "MakeAppx failed with exit code $LASTEXITCODE."
 }
 
-$pdb = [IO.Path]::ChangeExtension($executable, ".pdb")
+$pdb = @(
+    [IO.Path]::ChangeExtension($executable, ".pdb"),
+    (Join-Path $buildRoot "CaptureView.pdb"),
+    (Join-Path $buildRoot "Release\CaptureView.pdb")
+) | Where-Object { Test-Path $_ } | Select-Object -First 1
+if ($RequireSymbols -and -not $pdb) {
+    throw "CaptureView.pdb was not found under '$buildRoot'. Store upload symbols are required."
+}
 if (Test-Path $pdb) {
     $symbolStaging = Join-Path $outputRoot "symbols"
     if (Test-Path $symbolStaging) {

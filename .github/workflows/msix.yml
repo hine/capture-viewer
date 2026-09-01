@@ -50,7 +50,8 @@ jobs:
             -IdentityName $env:MSIX_IDENTITY_NAME `
             -Publisher $env:MSIX_PUBLISHER `
             -PublisherDisplayName $env:MSIX_PUBLISHER_DISPLAY_NAME `
-            -Version "${{ inputs.version }}"
+            -Version "${{ inputs.version }}" `
+            -RequireSymbols
 
       - name: Upload Store package artifact
         uses: actions/upload-artifact@v6
