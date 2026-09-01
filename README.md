@@ -2,8 +2,8 @@
 
 [日本語](#japanese)
 
-CaptureView is a lightweight native Windows viewer for low-latency video and
-audio monitoring from USB HDMI/UVC capture devices.
+CaptureView is a lightweight native Windows viewer designed for responsive
+video and audio monitoring from USB HDMI/UVC capture devices.
 
 It focuses on the essentials: select a video device and format, choose audio
 input and output endpoints independently, and start monitoring. It has no
@@ -18,7 +18,7 @@ recording, streaming, scene composition, or single-instance restriction.
 - Native Win32 application with no third-party runtime libraries
 - Media Foundation video capture with NV12 and MJPEG verified on hardware
 - Independent WASAPI audio input and output selection
-- Event-driven, low-latency audio monitoring and live mute
+- Event-driven audio monitoring and live mute
 - Normal, borderless, and fullscreen viewing modes
 - Always-on-top mode and multiple simultaneous application instances
 - Capture-relative window sizes: 50%, 75%, 100%, 125%, and 150%
@@ -104,8 +104,8 @@ forks and derived products must use their own name and visual identity. See
 
 # CaptureView（日本語）
 
-CaptureViewは、USB HDMI/UVCキャプチャデバイスの映像と音声を低遅延で
-モニタリングするための、軽量なWindowsネイティブビューアーです。
+CaptureViewは、USB HDMI/UVCキャプチャデバイスの映像と音声を快適に
+モニタリングできるよう応答性を重視した、軽量なWindowsネイティブビューアーです。
 
 映像デバイスとフォーマットを選び、音声の入力・出力を個別に指定して表示を
 開始する、という基本機能に集中しています。録画、配信、シーン合成、単一起動
@@ -119,7 +119,7 @@ CaptureViewは、USB HDMI/UVCキャプチャデバイスの映像と音声を低
 - 外部ランタイムライブラリを必要としないWin32ネイティブアプリケーション
 - Media Foundationによる映像キャプチャ（NV12・MJPEGを実機確認済み）
 - WASAPI音声入力・出力の独立選択
-- Event Driven方式による低遅延音声モニタリングとミュート
+- Event Driven方式による音声モニタリングとミュート
 - 通常、ボーダーレス、フルスクリーン表示
 - Always on Topとアプリケーションの複数同時起動
 - キャプチャ解像度基準の50%・75%・100%・125%・150%表示
