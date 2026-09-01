@@ -1,0 +1,67 @@
+# Architecture and delivery plan
+
+## Principles
+
+- One process owns one video capture pipeline. There is deliberately no global mutex or IPC forwarding.
+- Device identity is persisted by Media Foundation symbolic link / WASAPI endpoint ID, not display name.
+- Capture, rendering, and UI are separate components. The capture callback will publish only the newest frame; an older unpublished frame is replaced instead of queued.
+- D3D11 resources are owned by `Renderer`; the forthcoming Media Foundation source-reader path can negotiate a D3D-backed NV12 surface without changing window code.
+- User-facing errors carry a plain-language message while the log retains the HRESULT.
+
+## Milestones
+
+1. **Application shell (implemented):** Win32 lifecycle, MF and COM startup, video/audio endpoint enumeration, selection UI, JSON settings, logging, D3D11 swap chain, aspect-fit viewport and window modes.
+2. **Video MVP (in progress):** native format enumeration/selection (NV12, YUY2, MJPEG, RGB32), asynchronous Source Reader callback, latest-frame handoff, RGB32 texture rendering, and initial disconnect errors. Direct NV12 rendering remains.
+3. **Audio MVP (in progress):** independent WASAPI input/output selection, event-driven shared-mode path, bounded queue, overflow dropping, and live mute are implemented. Hardware validation and format conversion remain.
+4. **Profiles and polish:** `--profile`, full CLI overrides, device refresh/reconnect, optional VSync control and AV delay.
+
+The capture worker replaces its unpublished frame instead of queuing frames and
+posts at most one pending frame notification to the UI. Rendering therefore
+tracks the newest available sample rather than accumulating latency. The first
+implementation asks Media Foundation for RGB32 decoder output and uploads it to
+a D3D11 texture; direct NV12/D3D surfaces are the next optimization.
+
+The initial end-to-end hardware test used a USB capture device with a
+1280x720/50 NV12 native format and an Ubuntu Server console source. Orientation,
+color, live updates, aspect handling, and window responsiveness passed.
+Media Foundation's MJPEG decoder path was also verified for correct image,
+orientation, and color at 1920x1080/30. A subsequent continuous console-scroll
+test showed no visible frame-pacing, responsiveness, or stability problems.
+
+The asynchronous Source Reader detects physical USB removal and reports the
+Media Foundation invalidated-device error without blocking the UI. Setup,
+capture-error, and audio-error transitions share one path that recreates the
+top-level setup HWND and re-enumerates all endpoints; this also clears any DWM
+flip-model surface retained from the viewer HWND.
+The full removal flow—capture, unplug, error acknowledgement, fresh setup UI,
+and removal of the missing endpoint from the list—passed on hardware.
+The setup screen also provides manual device refresh. Removing and reconnecting
+the USB capture, refreshing video/audio endpoints and native formats, and
+preserving still-available selections passed without restarting the process.
+
+The initial audio path first tries the selected input endpoint's mix format on
+the output, then tries the output mix format on the input. It then negotiates
+common 48kHz or 44.1kHz stereo float/PCM16 stream formats, letting each shared
+Windows Audio Engine endpoint convert between that stream format and its own
+mix format. `AUTOCONVERTPCM` and `SRC_DEFAULT_QUALITY` are enabled when the
+endpoints do not expose an exact common format. The bounded queue retains at most roughly two output
+buffers and drops its oldest complete-frame-aligned data on overflow. Muting
+continues to consume queued data so unmuting cannot replay stale audio.
+
+The USB capture hardware exposes its HDMI audio separately as `Digital Input
+(USB Digital Audio)`. End-to-end monitoring from that endpoint to an explicitly
+selected output was verified at 48kHz, stereo, 32-bit float. The pipeline logs
+two-second capture/render/queue statistics for diagnosing silence or dropouts.
+Mute/unmute, Settings stop/restart, and application shutdown were also verified.
+A qualitative viewing/listening test found no obvious AV skew or objectionable
+latency. The approximately 10ms impression is not treated as a measurement;
+numeric latency still requires a synchronized flash/click source and high-speed
+recording or equivalent instrumentation.
+
+## Runtime data
+
+```text
+%LOCALAPPDATA%\CaptureView\
+  settings.json
+  logs\captureview.log
+```

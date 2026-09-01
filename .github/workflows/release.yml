@@ -1,0 +1,60 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  windows-release:
+    runs-on: windows-2022
+
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate tag and project version
+        id: version
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF_NAME -notmatch '^v([0-9]+\.[0-9]+\.[0-9]+)$') {
+            throw "Release tags must use vMAJOR.MINOR.PATCH."
+          }
+          $tagVersion = $Matches[1]
+          $cmakeText = Get-Content CMakeLists.txt -Raw
+          if ($cmakeText -notmatch 'project\(CaptureView VERSION ([0-9]+\.[0-9]+\.[0-9]+)') {
+            throw "Could not read the CaptureView version from CMakeLists.txt."
+          }
+          if ($tagVersion -ne $Matches[1]) {
+            throw "Tag version $tagVersion does not match CMake version $($Matches[1])."
+          }
+          "version=$tagVersion" | Add-Content $env:GITHUB_OUTPUT
+
+      - name: Configure
+        run: cmake -S . -B build -A x64
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Package portable build
+        id: package
+        shell: pwsh
+        run: ./tools/package_release.ps1 -Version "${{ steps.version.outputs.version }}"
+
+      - name: Create draft GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create $env:GITHUB_REF_NAME `
+            "${{ steps.package.outputs.zip_path }}" `
+            "${{ steps.package.outputs.checksum_path }}" `
+            --draft `
+            --verify-tag `
+            --generate-notes `
+            --title "CaptureView ${{ steps.version.outputs.version }}"

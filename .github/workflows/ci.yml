@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-release-build:
+    runs-on: windows-2022
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -S . -B build -A x64
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Package portable build
+        id: package
+        shell: pwsh
+        run: ./tools/package_release.ps1
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CaptureView-windows-x64
+          path: |
+            dist/*.zip
+            dist/*.sha256
+          if-no-files-found: error
