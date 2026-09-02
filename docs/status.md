@@ -23,7 +23,9 @@ notes that are intentionally kept out of the public-facing README.
 
 - Application, About, and Windows executable metadata are verified as `1.0.0`.
 - The `1.0.0.0` Store package passed Partner Center validation and certification
-  on September 3, 2026. Publication is intentionally held for manual release.
+  and was published on September 3, 2026.
+- The annotated `v1.0.0` tag and stable GitHub Release publish the matching
+  source, portable x64 ZIP, and SHA-256 checksum.
 - No known release-blocking failure in the advertised NV12/MJPEG video and
   WASAPI audio-monitoring paths.
 - Release build, portable package, license inclusion, and MSIX packaging are
@@ -51,7 +53,7 @@ planned for the stable `1.0.0` release rather than the `0.9.x` preview series.
 | Windows visual styles | Initial verified | Common Controls v6 flat combo boxes and Per-Monitor DPI V2 manifest verified on Windows at 150% |
 | Application icon | Initial verified | A-concept blue CV/USB mark embedded as a seven-size 16–256px ICO; title-bar and Explorer EXE rendering verified on Windows |
 | About/version/license | Initial verified | Context-menu Task Dialog, `1.0.0` version, Windows EXE metadata, author/brand text, repository link, MIT license link, and reserved brand-asset notice verified on Windows |
-| Distribution | Store-certified; stable publication pending | `0.9.0` is published as a GitHub pre-release with an Actions-built portable x64 ZIP, SHA-256 checksum, and full MIT text as `LICENSE.txt`. Local and GitHub-hosted builds produced valid x64 MSIX and `.msixupload` archives with `.appxsym`/PDB symbols using repository secrets. Self-signing, trust setup, installation, camera/microphone consent, capture, Settings return, shutdown, uninstall, and certificate cleanup passed on Windows. WACK 10.0.26100.7705 returned overall `PASS`; its informational Desktop Bridge test noted the intentional `ShellExecuteW` browser-link call. Partner Center validated and certified `1.0.0.0` on September 3, 2026; Store publication is intentionally held until the coordinated `1.0.0` release. Packaged and portable builds share `%LOCALAPPDATA%\CaptureView\`; uninstall preserves this data |
+| Distribution | Stable release published | `0.9.0` is published as a GitHub pre-release. `1.0.0` is published as a stable GitHub Release with an Actions-built portable x64 ZIP, SHA-256 checksum, and full MIT text as `LICENSE.txt`; the matching `1.0.0.0` package is published in the Microsoft Store. Local and GitHub-hosted builds produced valid x64 MSIX and `.msixupload` archives with `.appxsym`/PDB symbols using repository secrets. Self-signing, trust setup, installation, camera/microphone consent, capture, Settings return, shutdown, uninstall, and certificate cleanup passed on Windows. WACK 10.0.26100.7705 returned overall `PASS`; its informational Desktop Bridge test noted the intentional `ShellExecuteW` browser-link call. Partner Center validation and certification passed on September 3, 2026. Packaged and portable builds share `%LOCALAPPDATA%\CaptureView\`; uninstall preserves this data |
 | Manual device refresh | Done | Removal, reconnection, endpoint refresh, format refresh, and available-selection preservation verified on hardware |
 | User settings | Done | `%LOCALAPPDATA%\CaptureView\settings.json` |
 | Logging | Initial | Startup, device counts, and HRESULT failures |
