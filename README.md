@@ -34,6 +34,13 @@ recording, streaming, scene composition, or single-instance restriction.
 
 </details>
 
+## Get CaptureView
+
+- [Microsoft Store](https://apps.microsoft.com/detail/9PNWC0R67PT0) — recommended
+  for Store-managed installation and updates
+- [GitHub Releases](https://github.com/hine/capture-viewer/releases) — portable
+  x64 ZIP builds
+
 ## Features
 
 - Native Win32 application with no third-party runtime libraries
@@ -145,6 +152,13 @@ CaptureViewは、USB HDMI/UVCキャプチャデバイスの映像と音声を快
 
 > CaptureViewは現在も開発中です。実機確認済みの範囲と今後の作業は
 > [実装状況](docs/status.md)を参照してください。
+
+## 入手方法
+
+- [Microsoft Store](https://apps.microsoft.com/detail/9PNWC0R67PT0) —
+  Storeによるインストールと更新を利用する推奨版
+- [GitHub Releases](https://github.com/hine/capture-viewer/releases) —
+  ポータブルx64 ZIP版
 
 ## 特徴
 
