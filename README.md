@@ -13,6 +13,27 @@ recording, streaming, scene composition, or single-instance restriction.
 > [implementation status](docs/status.md) for verified hardware coverage and
 > remaining work.
 
+## Screenshots
+
+![CaptureView previewing a USB capture source](docs/images/captureview-preview.png)
+
+<details>
+<summary>Viewer controls, capture setup, and About</summary>
+
+<p align="center">
+  <img src="docs/images/captureview-viewer-controls.png" width="960" alt="CaptureView viewer menu and status overlay">
+</p>
+
+<p align="center">
+  <img src="docs/images/captureview-setup.png" width="720" alt="CaptureView capture setup window">
+</p>
+
+<p align="center">
+  <img src="docs/images/captureview-about.png" width="420" alt="CaptureView 1.0.0 About window">
+</p>
+
+</details>
+
 ## Features
 
 - Native Win32 application with no third-party runtime libraries
