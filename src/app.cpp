@@ -198,6 +198,10 @@ LRESULT App::HandleMessage(HWND window, UINT message, WPARAM wparam, LPARAM lpar
         const auto now = std::chrono::steady_clock::now();
         const double seconds = std::chrono::duration<double>(now - overlay_sample_start_).count();
         if (seconds >= 1.0) {
+          const std::uint64_t received = capture_.ReceivedFrames();
+          measured_input_fps_ =
+              (received - overlay_last_received_frames_) / seconds;
+          overlay_last_received_frames_ = received;
           measured_fps_ = overlay_frame_count_ / seconds;
           overlay_frame_count_ = 0;
           overlay_sample_start_ = now;
@@ -676,6 +680,8 @@ void App::StartViewer() {
   }();
   overlay_video_line_ = std::format(L"{} | {}", video_name, format.DisplayName());
   overlay_frame_count_ = 0;
+  overlay_last_received_frames_ = 0;
+  measured_input_fps_ = 0.0;
   measured_fps_ = 0.0;
   overlay_sample_start_ = std::chrono::steady_clock::now();
   UpdateStatusOverlay();
@@ -730,8 +736,9 @@ void App::UpdateStatusOverlay() {
         settings_.muted ? L" | Muted" : L"");
   }
   renderer_.SetOverlay(settings_.status_overlay,
-      std::format(L"{}\nVideo: {:.1f} fps | {}", overlay_video_line_, measured_fps_,
-                  audio_status));
+      std::format(L"{}\nInput: {:.1f} fps | Render: {:.1f} fps | Dropped: {} | Video queue: {}\n{}",
+                  overlay_video_line_, measured_input_fps_, measured_fps_,
+                  capture_.DroppedFrames(), capture_.QueueDepth(), audio_status));
 }
 
 void App::SetBorderless(bool enabled) {

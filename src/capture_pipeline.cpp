@@ -118,6 +118,9 @@ bool CapturePipeline::Start(const std::wstring& device_id,
   stopping_ = false;
   frame_notification_pending_ = false;
   last_error_ = S_OK;
+  received_frames_ = 0;
+  dropped_frames_ = 0;
+  queue_depth_ = 0;
   stop_event_ = CreateEventW(nullptr, TRUE, FALSE, nullptr);
   if (!stop_event_) {
     last_error_ = HRESULT_FROM_WIN32(GetLastError());
@@ -145,11 +148,13 @@ bool CapturePipeline::TakeLatestFrame(VideoFrame& frame) {
   std::scoped_lock lock(frame_mutex_);
   if (latest_frame_.pixels.empty()) {
     frame_notification_pending_ = false;
+    queue_depth_ = 0;
     return false;
   }
   frame = std::move(latest_frame_);
   latest_frame_ = {};
   frame_notification_pending_ = false;
+  queue_depth_ = 0;
   return true;
 }
 
@@ -322,7 +327,10 @@ HRESULT CapturePipeline::HandleReadSample(HRESULT status, DWORD flags,
       frame.pixels.assign(data, data + required);
       {
         std::scoped_lock lock(frame_mutex_);
+        ++received_frames_;
+        if (!latest_frame_.pixels.empty()) ++dropped_frames_;
         latest_frame_ = std::move(frame);
+        queue_depth_ = 1;
       }
       if (!frame_notification_pending_.exchange(true) && notify_window_) {
         PostMessageW(notify_window_, frame_message_, 0, 0);

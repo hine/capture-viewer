@@ -5,6 +5,7 @@
 #include "renderer.h"
 #include "settings.h"
 #include <chrono>
+#include <cstdint>
 #include <vector>
 namespace cv {
 class App {
@@ -46,6 +47,8 @@ class App {
   bool viewer_mode_ = false, fullscreen_ = false;
   bool programmatic_resize_ = false;
   unsigned overlay_frame_count_ = 0;
+  std::uint64_t overlay_last_received_frames_ = 0;
+  double measured_input_fps_ = 0.0;
   double measured_fps_ = 0.0;
   std::chrono::steady_clock::time_point overlay_sample_start_{};
   std::wstring overlay_video_line_;

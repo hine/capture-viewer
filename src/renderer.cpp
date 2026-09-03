@@ -128,8 +128,8 @@ void Renderer::DrawOverlay() {
   if (!overlay_enabled_ || overlay_text_.empty() || !d2d_target_) return;
   const D2D1_SIZE_F size = d2d_target_->GetSize();
   const float width = std::min(size.width - 24.0f, 760.0f);
-  const D2D1_RECT_F background = D2D1::RectF(12.0f, 12.0f, 12.0f + width, 64.0f);
-  const D2D1_RECT_F text = D2D1::RectF(22.0f, 17.0f, 6.0f + width, 62.0f);
+  const D2D1_RECT_F background = D2D1::RectF(12.0f, 12.0f, 12.0f + width, 84.0f);
+  const D2D1_RECT_F text = D2D1::RectF(22.0f, 17.0f, 6.0f + width, 82.0f);
   d2d_target_->BeginDraw();
   d2d_target_->FillRoundedRectangle(D2D1::RoundedRect(background, 4.0f, 4.0f),
                                     overlay_background_brush_.Get());

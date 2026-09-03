@@ -47,7 +47,7 @@ notes that are intentionally kept out of the public-facing README.
   `CopyResource`; hardware retesting is pending.
 - The staging-upload revision passed its initial `USB3 Video` hardware run at
   native 1920x1080/60 NV12. The image displayed with correct orientation and
-  geometry, the overlay measured 60 fps with video queue depth 0, and the
+  geometry and the overlay measured 60 fps, and the
   process remained running. Resize/fullscreen, color-chart, disconnect, and
   longer-duration checks remain before the native path is accepted.
 - The full native-NV12 regression pass subsequently completed without a known
@@ -60,17 +60,25 @@ notes that are intentionally kept out of the public-facing README.
   and the same-device comparison against the confirmed sharp OBS result.
 - The first native-YUY2 hardware run passed at 1920x1080/60 on `USB3 Video`.
   Previously degraded desktop text rendered sharply, matching the expected OBS
-  quality, while the overlay measured 60 fps with video queue depth 0. This
+  quality while the overlay measured 60 fps. This
   confirms that bypassing MF's YUY2-to-RGB32 conversion resolves the observed
   fine-detail defect. Full regression testing remains.
 - MJPEG capture now prefers Media Foundation decode output in NV12 when the
   renderer has successfully prepared the native NV12 path. Failure to negotiate
   decoded NV12 retains the existing MF decode-to-RGB32 fallback.
 - The first 1920x1080/60 MJPEG run after this change displayed a sharp image,
-  measured 60 fps, and held video queue depth 0. The overlay intentionally
+  measured 60 fps, and remained stable. The overlay intentionally
   reports the device-native MJPEG format. The diagnostic log confirmed decoded
   NV12 at 1920x1080/60 and the D3D11 Video Processor NV12 renderer, so the
   optimized decode path is accepted on this hardware.
+- The earlier overlay `Queue` value was the audio queue, not a video metric.
+  Benchmark instrumentation now reports separate input/render FPS, cumulative
+  latest-frame replacements, and the actual 0-or-1 video slot depth; prior
+  references to a measured video queue depth have been corrected.
+- The new counters passed 1920x1080/60 checks for MJPEG decoded to NV12, native
+  NV12, and native YUY2. All three reported 60 fps input, 60 fps render, zero
+  cumulative frame replacements, and video slot depth 0 at capture time. The
+  audio queue was independently 0 in these snapshots.
 
 ### v0.9.0 — first public preview (released)
 

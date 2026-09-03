@@ -39,6 +39,9 @@ class CapturePipeline {
   void Stop();
   bool TakeLatestFrame(VideoFrame& frame);
   HRESULT LastError() const { return last_error_.load(); }
+  std::uint64_t ReceivedFrames() const { return received_frames_.load(); }
+  std::uint64_t DroppedFrames() const { return dropped_frames_.load(); }
+  unsigned QueueDepth() const { return queue_depth_.load(); }
 
  private:
   void CaptureLoop(std::wstring device_id, VideoFormatInfo format);
@@ -53,6 +56,9 @@ class CapturePipeline {
   std::atomic<bool> stopping_{false};
   std::atomic<bool> frame_notification_pending_{false};
   std::atomic<HRESULT> last_error_{S_OK};
+  std::atomic<std::uint64_t> received_frames_{0};
+  std::atomic<std::uint64_t> dropped_frames_{0};
+  std::atomic<unsigned> queue_depth_{0};
   std::thread thread_;
   std::mutex frame_mutex_;
   VideoFrame latest_frame_;
