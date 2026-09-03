@@ -1,5 +1,7 @@
 #include "renderer.h"
+#include "capture_pipeline.h"
 #include <algorithm>
+#include <cstring>
 #include <d3dcompiler.h>
 #include <dxgi1_2.h>
 namespace cv {
@@ -50,6 +52,8 @@ HRESULT Renderer::Initialize(HWND window) {
 #endif
   if (SUCCEEDED(hr)) hr = CreateTarget();
   if (SUCCEEDED(hr)) hr = CreateShaders();
+  if (SUCCEEDED(hr)) hr = device_.As(&video_device_);
+  if (SUCCEEDED(hr)) hr = context_.As(&video_context_);
   if (SUCCEEDED(hr)) {
     hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED,
                            d2d_factory_.ReleaseAndGetAddressOf());
@@ -138,9 +142,11 @@ void Renderer::DrawOverlay() {
 HRESULT Renderer::Resize(UINT width, UINT height) {
   if (!swap_chain_ || !width || !height) return S_OK;
   d2d_target_.Reset(); overlay_text_brush_.Reset(); overlay_background_brush_.Reset();
+  video_output_view_.Reset();
   context_->OMSetRenderTargets(0, nullptr, nullptr); target_.Reset();
   HRESULT hr = swap_chain_->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, 0);
   if (SUCCEEDED(hr)) hr = CreateTarget();
+  if (SUCCEEDED(hr) && video_processor_) hr = CreateVideoOutputView();
   if (SUCCEEDED(hr)) hr = CreateOverlayResources();
   return hr;
 }
@@ -162,8 +168,184 @@ void Renderer::Render() {
   const HRESULT present_hr = swap_chain_->Present(0, DXGI_PRESENT_DO_NOT_WAIT);
   if (present_hr == DXGI_ERROR_WAS_STILL_DRAWING) return;
 }
-HRESULT Renderer::RenderFrame(const std::uint8_t* pixels, UINT width, UINT height, UINT stride) {
+bool Renderer::PrepareNativeYuv(VideoPixelFormat format, UINT width,
+                                UINT height) {
+  return SUCCEEDED(EnsureYuvResources(format, width, height));
+}
+
+HRESULT Renderer::CreateVideoOutputView() {
+  if (!video_device_ || !video_enumerator_ || !swap_chain_) return E_UNEXPECTED;
+  Microsoft::WRL::ComPtr<ID3D11Texture2D> buffer;
+  HRESULT hr = swap_chain_->GetBuffer(0, IID_PPV_ARGS(&buffer));
+  D3D11_VIDEO_PROCESSOR_OUTPUT_VIEW_DESC desc{};
+  desc.ViewDimension = D3D11_VPOV_DIMENSION_TEXTURE2D;
+  desc.Texture2D.MipSlice = 0;
+  if (SUCCEEDED(hr)) {
+    hr = video_device_->CreateVideoProcessorOutputView(
+        buffer.Get(), video_enumerator_.Get(), &desc, &video_output_view_);
+  }
+  return hr;
+}
+
+HRESULT Renderer::EnsureYuvResources(VideoPixelFormat format, UINT width,
+                                     UINT height) {
+  if (!video_device_ || !video_context_) return E_NOINTERFACE;
+  if (format == VideoPixelFormat::Bgra32) return E_INVALIDARG;
+  if (video_processor_ && yuv_texture_ && format == yuv_format_ &&
+      width == yuv_width_ && height == yuv_height_) {
+    return video_output_view_ ? S_OK : CreateVideoOutputView();
+  }
+  video_input_view_.Reset();
+  yuv_texture_.Reset();
+  yuv_staging_texture_.Reset();
+  video_output_view_.Reset();
+  video_processor_.Reset();
+  video_enumerator_.Reset();
+
+  D3D11_VIDEO_PROCESSOR_CONTENT_DESC content{};
+  content.InputFrameFormat = D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;
+  content.InputFrameRate = {60, 1};
+  content.InputWidth = width;
+  content.InputHeight = height;
+  content.OutputFrameRate = {60, 1};
+  content.OutputWidth = width;
+  content.OutputHeight = height;
+  content.Usage = D3D11_VIDEO_USAGE_PLAYBACK_NORMAL;
+  HRESULT hr = video_device_->CreateVideoProcessorEnumerator(
+      &content, &video_enumerator_);
+  if (SUCCEEDED(hr)) {
+    hr = video_device_->CreateVideoProcessor(video_enumerator_.Get(), 0,
+                                              &video_processor_);
+  }
+
+  D3D11_TEXTURE2D_DESC texture{};
+  texture.Width = width;
+  texture.Height = height;
+  texture.MipLevels = 1;
+  texture.ArraySize = 1;
+  texture.Format = format == VideoPixelFormat::Nv12 ? DXGI_FORMAT_NV12
+                                                     : DXGI_FORMAT_YUY2;
+  texture.SampleDesc.Count = 1;
+  texture.Usage = D3D11_USAGE_DEFAULT;
+  texture.BindFlags = D3D11_BIND_DECODER;
+  if (SUCCEEDED(hr)) hr = device_->CreateTexture2D(&texture, nullptr, &yuv_texture_);
+
+  texture.Usage = D3D11_USAGE_STAGING;
+  texture.BindFlags = 0;
+  texture.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+  if (SUCCEEDED(hr)) {
+    hr = device_->CreateTexture2D(&texture, nullptr, &yuv_staging_texture_);
+  }
+  if (SUCCEEDED(hr)) {
+    D3D11_MAPPED_SUBRESOURCE mapped{};
+    hr = context_->Map(yuv_staging_texture_.Get(), 0, D3D11_MAP_WRITE, 0,
+                       &mapped);
+    if (SUCCEEDED(hr)) context_->Unmap(yuv_staging_texture_.Get(), 0);
+  }
+
+  D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC input{};
+  input.FourCC = 0;
+  input.ViewDimension = D3D11_VPIV_DIMENSION_TEXTURE2D;
+  input.Texture2D.MipSlice = 0;
+  input.Texture2D.ArraySlice = 0;
+  if (SUCCEEDED(hr)) {
+    hr = video_device_->CreateVideoProcessorInputView(
+        yuv_texture_.Get(), video_enumerator_.Get(), &input,
+        &video_input_view_);
+  }
+  if (SUCCEEDED(hr)) hr = CreateVideoOutputView();
+  if (SUCCEEDED(hr)) {
+    yuv_format_ = format;
+    yuv_width_ = width;
+    yuv_height_ = height;
+  }
+  return hr;
+}
+
+HRESULT Renderer::RenderYuv(VideoPixelFormat format,
+                            const std::uint8_t* pixels, UINT width,
+                            UINT height, UINT stride) {
+  HRESULT hr = EnsureYuvResources(format, width, height);
+  if (FAILED(hr)) return hr;
+  source_width_ = width;
+  source_height_ = height;
+  D3D11_MAPPED_SUBRESOURCE mapped{};
+  hr = context_->Map(yuv_staging_texture_.Get(), 0, D3D11_MAP_WRITE, 0,
+                     &mapped);
+  if (FAILED(hr)) return hr;
+  const UINT row_bytes =
+      width * (format == VideoPixelFormat::Yuy2 ? 2u : 1u);
+  if (!mapped.pData || mapped.RowPitch < row_bytes || stride < row_bytes) {
+    context_->Unmap(yuv_staging_texture_.Get(), 0);
+    return E_INVALIDARG;
+  }
+  auto* mapped_destination = static_cast<std::uint8_t*>(mapped.pData);
+  for (UINT row = 0; row < height; ++row) {
+    std::memcpy(mapped_destination +
+                    static_cast<size_t>(row) * mapped.RowPitch,
+                pixels + static_cast<size_t>(row) * stride, row_bytes);
+  }
+  if (format == VideoPixelFormat::Nv12) {
+    const auto* source_uv = pixels + static_cast<size_t>(stride) * height;
+    auto* destination_uv =
+        mapped_destination + static_cast<size_t>(mapped.RowPitch) * height;
+    for (UINT row = 0; row < height / 2; ++row) {
+      std::memcpy(destination_uv + static_cast<size_t>(row) * mapped.RowPitch,
+                  source_uv + static_cast<size_t>(row) * stride, width);
+    }
+  }
+  context_->Unmap(yuv_staging_texture_.Get(), 0);
+  context_->CopyResource(yuv_texture_.Get(), yuv_staging_texture_.Get());
+
+  RECT client{};
+  GetClientRect(window_, &client);
+  const float client_width = static_cast<float>(client.right);
+  const float client_height = static_cast<float>(client.bottom);
+  const float aspect = static_cast<float>(width) / height;
+  float view_width = client_width;
+  float view_height = client_width / aspect;
+  if (view_height > client_height) {
+    view_height = client_height;
+    view_width = client_height * aspect;
+  }
+  const RECT source{0, 0, static_cast<LONG>(width), static_cast<LONG>(height)};
+  const RECT destination_rect{
+      static_cast<LONG>((client_width - view_width) / 2),
+      static_cast<LONG>((client_height - view_height) / 2),
+      static_cast<LONG>((client_width + view_width) / 2),
+      static_cast<LONG>((client_height + view_height) / 2)};
+  const float black[] = {0, 0, 0, 1};
+  context_->ClearRenderTargetView(target_.Get(), black);
+  video_context_->VideoProcessorSetStreamSourceRect(video_processor_.Get(), 0,
+                                                     TRUE, &source);
+  video_context_->VideoProcessorSetStreamDestRect(video_processor_.Get(), 0,
+                                                   TRUE, &destination_rect);
+  video_context_->VideoProcessorSetOutputTargetRect(video_processor_.Get(),
+                                                     TRUE, &destination_rect);
+  D3D11_VIDEO_PROCESSOR_STREAM stream{};
+  stream.Enable = TRUE;
+  stream.pInputSurface = video_input_view_.Get();
+  hr = video_context_->VideoProcessorBlt(video_processor_.Get(),
+                                         video_output_view_.Get(), 0, 1,
+                                         &stream);
+  if (FAILED(hr)) return hr;
+  if (overlay_enabled_) {
+    context_->OMSetRenderTargets(0, nullptr, nullptr);
+    context_->Flush();
+    DrawOverlay();
+  }
+  hr = swap_chain_->Present(0, DXGI_PRESENT_DO_NOT_WAIT);
+  return hr == DXGI_ERROR_WAS_STILL_DRAWING ? S_FALSE : hr;
+}
+
+HRESULT Renderer::RenderFrame(VideoPixelFormat format,
+                              const std::uint8_t* pixels, UINT width,
+                              UINT height, UINT stride) {
   if (!pixels || !width || !height || !target_) return E_INVALIDARG;
+  if (format == VideoPixelFormat::Nv12 ||
+      format == VideoPixelFormat::Yuy2) {
+    return RenderYuv(format, pixels, width, height, stride);
+  }
   HRESULT hr = EnsureFrameTexture(width, height);
   if (FAILED(hr)) return hr;
   source_width_ = width; source_height_ = height;

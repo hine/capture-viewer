@@ -1,5 +1,6 @@
 #include "capture_pipeline.h"
 #include "logger.h"
+#include <cstdlib>
 #include <format>
 #include <mfapi.h>
 #include <mferror.h>
@@ -39,6 +40,38 @@ class SourceReaderCallback final : public IMFSourceReaderCallback {
 };
 
 namespace {
+
+std::wstring VideoSubtypeName(const GUID& subtype) {
+  if (subtype == MFVideoFormat_NV12) return L"NV12";
+  if (subtype == MFVideoFormat_YUY2) return L"YUY2";
+  if (subtype == MFVideoFormat_MJPG) return L"MJPEG";
+  if (subtype == MFVideoFormat_RGB32) return L"RGB32";
+  return L"other";
+}
+
+std::wstring MediaTypeSummary(IMFMediaType* type) {
+  if (!type) return L"unavailable";
+  GUID subtype{};
+  UINT32 width = 0, height = 0;
+  UINT32 rate_numerator = 0, rate_denominator = 0;
+  UINT32 aspect_numerator = 0, aspect_denominator = 0;
+  UINT32 interlace = MFVideoInterlace_Unknown;
+  UINT32 stride_value = 0, sample_size = 0;
+  type->GetGUID(MF_MT_SUBTYPE, &subtype);
+  MFGetAttributeSize(type, MF_MT_FRAME_SIZE, &width, &height);
+  MFGetAttributeRatio(type, MF_MT_FRAME_RATE, &rate_numerator,
+                      &rate_denominator);
+  MFGetAttributeRatio(type, MF_MT_PIXEL_ASPECT_RATIO, &aspect_numerator,
+                      &aspect_denominator);
+  type->GetUINT32(MF_MT_INTERLACE_MODE, &interlace);
+  type->GetUINT32(MF_MT_DEFAULT_STRIDE, &stride_value);
+  type->GetUINT32(MF_MT_SAMPLE_SIZE, &sample_size);
+  return std::format(
+      L"{} {}x{} {}/{} fps, aspect {}/{}, interlace {}, stride {}, sample {}",
+      VideoSubtypeName(subtype), width, height, rate_numerator,
+      rate_denominator, aspect_numerator, aspect_denominator, interlace,
+      static_cast<LONG>(stride_value), sample_size);
+}
 
 HRESULT OpenVideoSource(const std::wstring& device_id,
                         ComPtr<IMFMediaSource>& source) {
@@ -165,12 +198,23 @@ void CapturePipeline::CaptureLoop(std::wstring device_id,
   if (SUCCEEDED(hr)) {
     hr = reader->GetNativeMediaType(stream, format.native_index, &native_type);
   }
+  if (SUCCEEDED(hr)) {
+    Logger::Instance().Info(
+        L"Video native media type: " + MediaTypeSummary(native_type.Get()));
+  }
   if (SUCCEEDED(hr)) hr = reader->SetCurrentMediaType(stream, nullptr, native_type.Get());
 
   ComPtr<IMFMediaType> output_type;
   if (SUCCEEDED(hr)) hr = MFCreateMediaType(&output_type);
   if (SUCCEEDED(hr)) hr = output_type->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
-  if (SUCCEEDED(hr)) hr = output_type->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_RGB32);
+  const bool request_native_yuv =
+      prefer_native_yuv_ && (format.subtype == MFVideoFormat_NV12 ||
+                             format.subtype == MFVideoFormat_YUY2);
+  if (SUCCEEDED(hr)) {
+    hr = output_type->SetGUID(MF_MT_SUBTYPE,
+                              request_native_yuv ? format.subtype
+                                                 : MFVideoFormat_RGB32);
+  }
   if (SUCCEEDED(hr)) {
     hr = MFSetAttributeSize(output_type.Get(), MF_MT_FRAME_SIZE,
                             format.width, format.height);
@@ -181,6 +225,22 @@ void CapturePipeline::CaptureLoop(std::wstring device_id,
                              format.frame_rate_denominator);
   }
   if (SUCCEEDED(hr)) hr = reader->SetCurrentMediaType(stream, nullptr, output_type.Get());
+  if (FAILED(hr) && request_native_yuv) {
+    Logger::Instance().Error(
+        L"Native YUV output negotiation failed; using RGB32 fallback", hr);
+    hr = output_type->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_RGB32);
+    if (SUCCEEDED(hr)) {
+      hr = reader->SetCurrentMediaType(stream, nullptr, output_type.Get());
+    }
+  }
+  ComPtr<IMFMediaType> negotiated_output_type;
+  if (SUCCEEDED(hr)) {
+    hr = reader->GetCurrentMediaType(stream, &negotiated_output_type);
+  }
+  if (SUCCEEDED(hr)) {
+    Logger::Instance().Info(L"Video negotiated output type: " +
+                            MediaTypeSummary(negotiated_output_type.Get()));
+  }
   if (FAILED(hr)) {
     if (source) source->Shutdown();
     PublishError(hr);
@@ -189,9 +249,27 @@ void CapturePipeline::CaptureLoop(std::wstring device_id,
   }
 
   {
+    GUID negotiated_subtype{};
+    UINT32 negotiated_stride = 0;
+    negotiated_output_type->GetGUID(MF_MT_SUBTYPE, &negotiated_subtype);
+    negotiated_output_type->GetUINT32(MF_MT_DEFAULT_STRIDE,
+                                      &negotiated_stride);
     std::scoped_lock lock(reader_mutex_);
     reader_ = reader;
     active_format_ = format;
+    output_format_ = negotiated_subtype == MFVideoFormat_NV12
+                         ? VideoPixelFormat::Nv12
+                     : negotiated_subtype == MFVideoFormat_YUY2
+                         ? VideoPixelFormat::Yuy2
+                         : VideoPixelFormat::Bgra32;
+    output_stride_ = negotiated_stride
+                         ? static_cast<unsigned>(
+                               std::abs(static_cast<LONG>(negotiated_stride)))
+                         : format.width *
+                               (output_format_ == VideoPixelFormat::Nv12
+                                    ? 1
+                                : output_format_ == VideoPixelFormat::Yuy2 ? 2
+                                                                          : 4);
   }
   Logger::Instance().Info(std::format(L"Video capture started: {}", format.DisplayName()));
   hr = reader->ReadSample(stream, 0, nullptr, nullptr, nullptr, nullptr);
@@ -225,10 +303,15 @@ HRESULT CapturePipeline::HandleReadSample(HRESULT status, DWORD flags,
     BYTE* data = nullptr;
     DWORD length = 0;
     if (SUCCEEDED(hr)) hr = buffer->Lock(&data, nullptr, &length);
-    const unsigned stride = active_format_.width * 4;
-    const size_t required = static_cast<size_t>(stride) * active_format_.height;
+    const unsigned stride = output_stride_;
+    const size_t luma_or_rgb_bytes =
+        static_cast<size_t>(stride) * active_format_.height;
+    const size_t required =
+        luma_or_rgb_bytes +
+        (output_format_ == VideoPixelFormat::Nv12 ? luma_or_rgb_bytes / 2 : 0);
     if (SUCCEEDED(hr) && length >= required) {
       VideoFrame frame;
+      frame.format = output_format_;
       frame.width = active_format_.width;
       frame.height = active_format_.height;
       frame.stride = stride;

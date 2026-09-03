@@ -5,6 +5,65 @@ notes that are intentionally kept out of the public-facing README.
 
 ## Release targets
 
+### v1.1.0 — compatibility and lower video overhead (planned)
+
+- The ordered implementation and validation plan is documented in
+  [v1.1-roadmap.md](v1.1-roadmap.md).
+- The pre-change video pipeline has been audited: every selected native format
+  is currently converted or decoded by Media Foundation to RGB32, copied into
+  the latest-frame slot, and uploaded to a reusable D3D11 BGRA texture.
+- The first hardware gate is validation of the existing YUY2-to-RGB32 path.
+  Native NV12 rendering follows only after that gate.
+- RGB32 remains the compatibility fallback throughout the 1.1 work.
+- The first 640x480/30 YUY2 run displayed the full test chart with plausible
+  layout and color. Fine text and line patterns were heavily reduced by the
+  1920x1080-to-640x480 source scaling; broader interaction testing remains.
+- A PC source matched to 800x600/20 YUY2 displayed correctly with plausible
+  color, undistorted 4:3 geometry, and expected pillarboxing. This device is
+  accepted for compatibility testing, but its low-rate YUY2 modes are not a
+  valid 1080p60 performance benchmark.
+- A same-source 1920x1080 comparison showed that 10 fps MJPEG retains materially
+  sharper UI text than 5 fps YUY2 on the first capture device. A second device,
+  identified as `USB3 Video`, also displayed severe desktop-text degradation at
+  1920x1080/20 YUY2 while maintaining the requested frame rate. OBS produced a
+  materially sharper result from the same device with YUY2 explicitly forced,
+  confirming a CaptureView quality defect in the current MF conversion/render
+  path. Diagnostic logging now records native and negotiated subtype, size,
+  frame rate, pixel aspect ratio, interlace mode, stride, and sample size.
+- The diagnostic run reported progressive (`MFVideoInterlace_Progressive`)
+  1920x1080 square-pixel media at 20 fps. Native YUY2 stride/sample size were
+  3840/4147200 and negotiated RGB32 values were 7680/8294400, all exact expected
+  values. Incorrect geometry, interlacing, pitch, and sample size are therefore
+  ruled out; MF's YUY2-to-RGB32 conversion is the leading suspect.
+- An initial native-NV12 implementation is pending Windows build and hardware
+  validation. It requests NV12 output only after a D3D11 Video Processor and
+  NV12 resources have been prepared; otherwise capture retains the existing
+  RGB32-compatible path. The first version keeps one CPU copy and one GPU upload
+  while moving YUV-to-RGB conversion to the GPU.
+- The first 1920x1080/60 NV12 run negotiated native NV12 successfully but showed
+  black and terminated inside the first-frame GPU path without an HRESULT being
+  logged. Direct `UpdateSubresource` upload to the multi-plane video texture was
+  replaced with row-aware mapping of a staging NV12 texture followed by
+  `CopyResource`; hardware retesting is pending.
+- The staging-upload revision passed its initial `USB3 Video` hardware run at
+  native 1920x1080/60 NV12. The image displayed with correct orientation and
+  geometry, the overlay measured 60 fps with video queue depth 0, and the
+  process remained running. Resize/fullscreen, color-chart, disconnect, and
+  longer-duration checks remain before the native path is accepted.
+- The full native-NV12 regression pass subsequently completed without a known
+  failure: resize, preset window sizes, fullscreen return, borderless mode,
+  overlay toggling, Settings return/restart, sustained playback, and USB
+  disconnect/reconnect all passed at 1920x1080/60. Native NV12 is accepted for
+  this hardware; broader GPU coverage remains a release-level requirement.
+- The validated Video Processor/staging path has been generalized for native
+  YUY2. Native YUY2 negotiation and GPU conversion are pending Windows build
+  and the same-device comparison against the confirmed sharp OBS result.
+- The first native-YUY2 hardware run passed at 1920x1080/60 on `USB3 Video`.
+  Previously degraded desktop text rendered sharply, matching the expected OBS
+  quality, while the overlay measured 60 fps with video queue depth 0. This
+  confirms that bypassing MF's YUY2-to-RGB32 conversion resolves the observed
+  fine-detail defect. Full regression testing remains.
+
 ### v0.9.0 — first public preview (released)
 
 - Released on September 1, 2026 from the public

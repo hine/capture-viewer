@@ -14,7 +14,10 @@
 
 namespace cv {
 
+enum class VideoPixelFormat { Bgra32, Nv12, Yuy2 };
+
 struct VideoFrame {
+  VideoPixelFormat format = VideoPixelFormat::Bgra32;
   unsigned width = 0;
   unsigned height = 0;
   unsigned stride = 0;
@@ -32,6 +35,7 @@ class CapturePipeline {
 
   bool Start(const std::wstring& device_id, const VideoFormatInfo& format,
              HWND notify_window, UINT frame_message, UINT error_message);
+  void PreferNativeYuv(bool enabled) { prefer_native_yuv_ = enabled; }
   void Stop();
   bool TakeLatestFrame(VideoFrame& frame);
   HRESULT LastError() const { return last_error_.load(); }
@@ -56,6 +60,9 @@ class CapturePipeline {
   Microsoft::WRL::ComPtr<IMFMediaSource> source_;
   Microsoft::WRL::ComPtr<IMFSourceReader> reader_;
   VideoFormatInfo active_format_;
+  VideoPixelFormat output_format_ = VideoPixelFormat::Bgra32;
+  unsigned output_stride_ = 0;
+  bool prefer_native_yuv_ = false;
 };
 
 }  // namespace cv

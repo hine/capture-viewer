@@ -11,15 +11,28 @@
 ## Milestones
 
 1. **Application shell (implemented):** Win32 lifecycle, MF and COM startup, video/audio endpoint enumeration, selection UI, JSON settings, logging, D3D11 swap chain, aspect-fit viewport and window modes.
-2. **Video MVP (in progress):** native format enumeration/selection (NV12, YUY2, MJPEG, RGB32), asynchronous Source Reader callback, latest-frame handoff, RGB32 texture rendering, and initial disconnect errors. Direct NV12 rendering remains.
+2. **Video MVP (implemented baseline):** native format enumeration/selection (NV12, YUY2, MJPEG, RGB32), asynchronous Source Reader callback, latest-frame handoff, RGB32 texture rendering, and disconnect errors.
 3. **Audio MVP (in progress):** independent WASAPI input/output selection, event-driven shared-mode path, bounded queue, overflow dropping, and live mute are implemented. Hardware validation and format conversion remain.
-4. **Profiles and polish:** `--profile`, full CLI overrides, device refresh/reconnect, optional VSync control and AV delay.
+4. **Version 1.1 video efficiency:** YUY2 compatibility validation, native NV12 and YUY2 D3D11 rendering with RGB32 fallback, MJPEG decode-to-NV12 where available, and measured Present behavior.
+5. **Later candidates:** `--profile`, full CLI overrides, optional VSync control, and AV delay.
 
 The capture worker replaces its unpublished frame instead of queuing frames and
 posts at most one pending frame notification to the UI. Rendering therefore
-tracks the newest available sample rather than accumulating latency. The first
-implementation asks Media Foundation for RGB32 decoder output and uploads it to
-a D3D11 texture; direct NV12/D3D surfaces are the next optimization.
+tracks the newest available sample rather than accumulating latency. The UI
+thread renders in response to that notification; the timer performs only the
+initial clear/present before the first captured frame.
+
+Before the 1.1 work, the implementation asked Media Foundation for RGB32 output
+regardless of whether the selected input was NV12, YUY2, MJPEG, or RGB32. That
+audited compatibility path remains for MJPEG/RGB32 and as fallback. For native
+NV12 and YUY2, the renderer now preflights D3D11 Video Processor resources,
+capture retains the selected YUV subtype, and each frame is copied into a
+mapped staging texture before `CopyResource` and GPU YUV-to-RGB conversion. The
+latest-frame bound remains one and the texture resources are reused.
+
+`Present(0, DXGI_PRESENT_DO_NOT_WAIT)` avoids a vertical-blank wait on the UI
+thread. See [v1.1-roadmap.md](v1.1-roadmap.md) for the audited baseline, ordered
+native-YUV work, and hardware test matrix.
 
 The initial end-to-end hardware test used a USB capture device with a
 1280x720/50 NV12 native format and an Ubuntu Server console source. Orientation,

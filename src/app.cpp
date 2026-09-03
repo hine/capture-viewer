@@ -6,6 +6,7 @@
 #include <commctrl.h>
 #include <dwmapi.h>
 #include <format>
+#include <mfapi.h>
 #include <shellapi.h>
 #include <uxtheme.h>
 #include <windowsx.h>
@@ -202,8 +203,9 @@ LRESULT App::HandleMessage(HWND window, UINT message, WPARAM wparam, LPARAM lpar
           overlay_sample_start_ = now;
         }
         UpdateStatusOverlay();
-        const HRESULT hr = renderer_.RenderFrame(frame.pixels.data(), frame.width,
-                                                 frame.height, frame.stride);
+        const HRESULT hr = renderer_.RenderFrame(
+            frame.format, frame.pixels.data(), frame.width, frame.height,
+            frame.stride);
         if (FAILED(hr)) Logger::Instance().Error(L"Video frame rendering failed", hr);
       }
       return 0;
@@ -648,6 +650,20 @@ void App::StartViewer() {
     CreateSetupControls(); return;
   }
   renderer_.SetSourceSize(format.width, format.height);
+  const VideoPixelFormat requested_format =
+      format.subtype == MFVideoFormat_NV12
+          ? VideoPixelFormat::Nv12
+      : format.subtype == MFVideoFormat_YUY2 ? VideoPixelFormat::Yuy2
+                                              : VideoPixelFormat::Bgra32;
+  const bool native_yuv = requested_format != VideoPixelFormat::Bgra32 &&
+                          renderer_.PrepareNativeYuv(
+                              requested_format, format.width, format.height);
+  capture_.PreferNativeYuv(native_yuv);
+  const std::wstring renderer_path =
+      native_yuv ? std::format(L"Renderer path: D3D11 Video Processor {}",
+                               format.subtype_name)
+                 : std::wstring(L"Renderer path: compatible RGB32");
+  Logger::Instance().Info(renderer_path);
   const std::wstring video_name = [&] {
     const auto found = std::find_if(videos_.begin(), videos_.end(), [&](const DeviceInfo& device) {
       return device.id == settings_.video_device_id;
