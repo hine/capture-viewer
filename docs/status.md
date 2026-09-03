@@ -88,6 +88,12 @@ notes that are intentionally kept out of the public-facing README.
   usage was about 6% on the Radeon RX 6600 XT, though this includes the desktop
   and other applications and is not attributable to CaptureView alone. A
   longer-duration observation remains.
+- A VSync diagnostic at native NV12 1920x1080/60 initially held 60.0 fps
+  input/render with zero replacements, video slot depth 0, a 10 ms audio queue,
+  and about 4% system-wide GPU 3D usage, but became unresponsive after a longer
+  idle period. Its log reached normal audio/video shutdown without a render
+  error. Blocking `Present(1, 0)` on the UI thread is rejected; production stays
+  on non-blocking `Present(0, DXGI_PRESENT_DO_NOT_WAIT)`.
 
 ### v0.9.0 — first public preview (released)
 
