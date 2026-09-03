@@ -654,14 +654,18 @@ void App::StartViewer() {
       format.subtype == MFVideoFormat_NV12
           ? VideoPixelFormat::Nv12
       : format.subtype == MFVideoFormat_YUY2 ? VideoPixelFormat::Yuy2
+      : format.subtype == MFVideoFormat_MJPG ? VideoPixelFormat::Nv12
                                               : VideoPixelFormat::Bgra32;
   const bool native_yuv = requested_format != VideoPixelFormat::Bgra32 &&
                           renderer_.PrepareNativeYuv(
                               requested_format, format.width, format.height);
   capture_.PreferNativeYuv(native_yuv);
+  const std::wstring native_path_name =
+      format.subtype == MFVideoFormat_MJPG ? L"NV12 (MJPEG decode)"
+                                           : format.subtype_name;
   const std::wstring renderer_path =
       native_yuv ? std::format(L"Renderer path: D3D11 Video Processor {}",
-                               format.subtype_name)
+                               native_path_name)
                  : std::wstring(L"Renderer path: compatible RGB32");
   Logger::Instance().Info(renderer_path);
   const std::wstring video_name = [&] {

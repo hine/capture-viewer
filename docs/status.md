@@ -63,6 +63,14 @@ notes that are intentionally kept out of the public-facing README.
   quality, while the overlay measured 60 fps with video queue depth 0. This
   confirms that bypassing MF's YUY2-to-RGB32 conversion resolves the observed
   fine-detail defect. Full regression testing remains.
+- MJPEG capture now prefers Media Foundation decode output in NV12 when the
+  renderer has successfully prepared the native NV12 path. Failure to negotiate
+  decoded NV12 retains the existing MF decode-to-RGB32 fallback.
+- The first 1920x1080/60 MJPEG run after this change displayed a sharp image,
+  measured 60 fps, and held video queue depth 0. The overlay intentionally
+  reports the device-native MJPEG format. The diagnostic log confirmed decoded
+  NV12 at 1920x1080/60 and the D3D11 Video Processor NV12 renderer, so the
+  optimized decode path is accepted on this hardware.
 
 ### v0.9.0 — first public preview (released)
 

@@ -209,11 +209,15 @@ void CapturePipeline::CaptureLoop(std::wstring device_id,
   if (SUCCEEDED(hr)) hr = output_type->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
   const bool request_native_yuv =
       prefer_native_yuv_ && (format.subtype == MFVideoFormat_NV12 ||
-                             format.subtype == MFVideoFormat_YUY2);
+                             format.subtype == MFVideoFormat_YUY2 ||
+                             format.subtype == MFVideoFormat_MJPG);
   if (SUCCEEDED(hr)) {
-    hr = output_type->SetGUID(MF_MT_SUBTYPE,
-                              request_native_yuv ? format.subtype
-                                                 : MFVideoFormat_RGB32);
+    const GUID& output_subtype =
+        request_native_yuv
+            ? (format.subtype == MFVideoFormat_MJPG ? MFVideoFormat_NV12
+                                                     : format.subtype)
+            : MFVideoFormat_RGB32;
+    hr = output_type->SetGUID(MF_MT_SUBTYPE, output_subtype);
   }
   if (SUCCEEDED(hr)) {
     hr = MFSetAttributeSize(output_type.Get(), MF_MT_FRAME_SIZE,
