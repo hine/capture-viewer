@@ -79,6 +79,15 @@ notes that are intentionally kept out of the public-facing README.
   NV12, and native YUY2. All three reported 60 fps input, 60 fps render, zero
   cumulative frame replacements, and video slot depth 0 at capture time. The
   audio queue was independently 0 in these snapshots.
+- An initial two-process/two-device run passed functionally: native NV12
+  1920x1080/60 held 60.0 fps input/render with 9 cumulative replacements, while
+  MJPEG-to-NV12 1920x1080/30 held 29.8 fps input/render with 2 replacements.
+  Both sampled video slots were empty. The 48 kHz audio queues sampled between
+  480 and 960 frames (about 10--20 ms). Task Manager showed the two processes at
+  1.9%/27.5 MB and 0.2%/31.2 MB CPU/working set in one snapshot. Total GPU 3D
+  usage was about 6% on the Radeon RX 6600 XT, though this includes the desktop
+  and other applications and is not attributable to CaptureView alone. A
+  longer-duration observation remains.
 
 ### v0.9.0 — first public preview (released)
 
