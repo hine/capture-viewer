@@ -48,6 +48,35 @@ WAVEFORMATEXTENSIBLE StandardStereoFormat(DWORD sample_rate, WORD bits,
   return format;
 }
 
+std::wstring DescribeFormat(const WAVEFORMATEX* format) {
+  if (!format) return L"unavailable";
+  constexpr WORD extensible_extra_size = static_cast<WORD>(
+      sizeof(WAVEFORMATEXTENSIBLE) - sizeof(WAVEFORMATEX));
+  const GUID* subtype = nullptr;
+  WORD valid_bits = format->wBitsPerSample;
+  DWORD channel_mask = 0;
+  if (format->wFormatTag == WAVE_FORMAT_EXTENSIBLE &&
+      format->cbSize >= extensible_extra_size) {
+    const auto* extensible =
+        reinterpret_cast<const WAVEFORMATEXTENSIBLE*>(format);
+    subtype = &extensible->SubFormat;
+    valid_bits = extensible->Samples.wValidBitsPerSample;
+    channel_mask = extensible->dwChannelMask;
+  }
+  const wchar_t* encoding = L"unknown";
+  if (format->wFormatTag == WAVE_FORMAT_IEEE_FLOAT ||
+      (subtype && IsEqualGUID(*subtype, KSDATAFORMAT_SUBTYPE_IEEE_FLOAT))) {
+    encoding = L"float";
+  } else if (format->wFormatTag == WAVE_FORMAT_PCM ||
+             (subtype && IsEqualGUID(*subtype, KSDATAFORMAT_SUBTYPE_PCM))) {
+    encoding = L"PCM";
+  }
+  return std::format(L"{} Hz, {} ch, {}-bit {} (valid {}, mask 0x{:X})",
+                     format->nSamplesPerSec, format->nChannels,
+                     format->wBitsPerSample, encoding, valid_bits,
+                     channel_mask);
+}
+
 }  // namespace
 
 AudioPipeline::~AudioPipeline() { Stop(); }
@@ -102,6 +131,7 @@ void AudioPipeline::AudioLoop(std::wstring input_id, std::wstring output_id) {
   WAVEFORMATEX* input_format = nullptr;
   WAVEFORMATEX* output_format = nullptr;
   WAVEFORMATEX* shared_format = nullptr;
+  const wchar_t* format_selection = L"48 kHz stereo float fallback";
   WAVEFORMATEXTENSIBLE standard_formats[] = {
       StandardStereoFormat(48000, 32, true),
       StandardStereoFormat(48000, 16, false),
@@ -120,15 +150,23 @@ void AudioPipeline::AudioLoop(std::wstring input_id, std::wstring output_id) {
                                                    nullptr, &output_client);
   if (SUCCEEDED(hr)) hr = input_client->GetMixFormat(&input_format);
   if (SUCCEEDED(hr)) hr = output_client->GetMixFormat(&output_format);
+  if (SUCCEEDED(hr)) {
+    Logger::Instance().Info(std::format(
+        L"Audio endpoint mix formats: input=[{}], output=[{}]",
+        DescribeFormat(input_format), DescribeFormat(output_format)));
+  }
   if (SUCCEEDED(hr) && SupportsExactly(output_client.Get(), input_format)) {
     shared_format = input_format;
+    format_selection = L"input mix format";
   } else if (SUCCEEDED(hr) && SupportsExactly(input_client.Get(), output_format)) {
     shared_format = output_format;
+    format_selection = L"output mix format";
   } else if (SUCCEEDED(hr)) {
     for (auto& candidate : standard_formats) {
       if (SupportsExactly(input_client.Get(), &candidate.Format) &&
           SupportsExactly(output_client.Get(), &candidate.Format)) {
         shared_format = &candidate.Format;
+        format_selection = L"common standard format";
         break;
       }
     }
@@ -136,6 +174,11 @@ void AudioPipeline::AudioLoop(std::wstring input_id, std::wstring output_id) {
     // when IsFormatSupported does not report an exact match, 48 kHz stereo
     // float is the preferred interchange format for the converter.
     if (!shared_format) shared_format = &standard_formats[0].Format;
+  }
+  if (SUCCEEDED(hr)) {
+    Logger::Instance().Info(std::format(
+        L"Audio interchange format: [{}], selected from {}",
+        DescribeFormat(shared_format), format_selection));
   }
 
   constexpr DWORD conversion_flags = AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM |
@@ -195,7 +238,7 @@ void AudioPipeline::AudioLoop(std::wstring input_id, std::wstring output_id) {
     std::uint64_t captured_nonzero_bytes = 0;
     std::uint64_t rendered_frames = 0;
     auto next_statistics = std::chrono::steady_clock::now() +
-                           std::chrono::seconds(2);
+                           std::chrono::seconds(60);
     HANDLE events[] = {stop_event_, input_event, output_event};
     bool running = true;
     while (running && !stopping_) {
@@ -260,7 +303,7 @@ void AudioPipeline::AudioLoop(std::wstring input_id, std::wstring output_id) {
         captured_nonzero_bytes = 0;
         rendered_frames = 0;
         next_statistics = std::chrono::steady_clock::now() +
-                          std::chrono::seconds(2);
+                          std::chrono::seconds(60);
       }
       if (FAILED(hr)) { PublishError(hr); running = false; }
     }

@@ -12,7 +12,7 @@
 
 1. **Application shell (implemented):** Win32 lifecycle, MF and COM startup, video/audio endpoint enumeration, selection UI, JSON settings, logging, D3D11 swap chain, aspect-fit viewport and window modes.
 2. **Video MVP (implemented baseline):** native format enumeration/selection (NV12, YUY2, MJPEG, RGB32), asynchronous Source Reader callback, latest-frame handoff, RGB32 texture rendering, and disconnect errors.
-3. **Audio MVP (in progress):** independent WASAPI input/output selection, event-driven shared-mode path, bounded queue, overflow dropping, and live mute are implemented. Hardware validation and format conversion remain.
+3. **Audio MVP (implemented):** independent WASAPI input/output selection, event-driven shared-mode path, bounded queue, overflow dropping, live mute, and Audio Engine format conversion are implemented and hardware-validated.
 4. **Version 1.1 video efficiency:** YUY2 compatibility validation, native NV12 and YUY2 D3D11 rendering with RGB32 fallback, MJPEG decode-to-NV12 where available, and measured Present behavior.
 5. **Later candidates:** `--profile`, full CLI overrides, optional VSync control, and AV delay.
 
@@ -59,7 +59,9 @@ Windows Audio Engine endpoint convert between that stream format and its own
 mix format. `AUTOCONVERTPCM` and `SRC_DEFAULT_QUALITY` are enabled when the
 endpoints do not expose an exact common format. The bounded queue retains at most roughly two output
 buffers and drops its oldest complete-frame-aligned data on overflow. Muting
-continues to consume queued data so unmuting cannot replay stale audio.
+continues to consume queued data so unmuting cannot replay stale audio. Endpoint
+mix formats and the selected interchange format are logged at startup so
+hardware conversion behavior can be verified without a custom resampler.
 
 The USB capture hardware exposes its HDMI audio separately as `Digital Input
 (USB Digital Audio)`. End-to-end monitoring from that endpoint to an explicitly

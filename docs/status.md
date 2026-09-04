@@ -94,6 +94,15 @@ notes that are intentionally kept out of the public-facing README.
   idle period. Its log reached normal audio/video shutdown without a render
   error. Blocking `Present(1, 0)` on the UI thread is rejected; production stays
   on non-blocking `Present(0, DXGI_PRESENT_DO_NOT_WAIT)`.
+- Audio startup logging now records both endpoint mix formats and the selected
+  shared interchange format. Periodic audio statistics were reduced from every
+  2 seconds to every 60 seconds to avoid rapid growth during long sessions.
+- Matching 48 kHz stereo 32-bit-float input/output mix formats were verified on
+  hardware. The input mix format was selected unchanged and monitoring started
+  successfully.
+- A deliberately mismatched 48 kHz input / 44.1 kHz output test also passed.
+  The 48 kHz stereo-float interchange stream was converted by Windows Audio
+  Engine and played normally without dropouts, speed changes, or pitch changes.
 
 ### v0.9.0 — first public preview (released)
 
@@ -146,15 +155,15 @@ planned for the stable `1.0.0` release rather than the `0.9.x` preview series.
 | Distribution | Stable release published | `0.9.0` is published as a GitHub pre-release. `1.0.0` is published as a stable GitHub Release with an Actions-built portable x64 ZIP, SHA-256 checksum, and full MIT text as `LICENSE.txt`; the matching `1.0.0.0` package is published in the Microsoft Store. Local and GitHub-hosted builds produced valid x64 MSIX and `.msixupload` archives with `.appxsym`/PDB symbols using repository secrets. Self-signing, trust setup, installation, camera/microphone consent, capture, Settings return, shutdown, uninstall, and certificate cleanup passed on Windows. WACK 10.0.26100.7705 returned overall `PASS`; its informational Desktop Bridge test noted the intentional `ShellExecuteW` browser-link call. Partner Center validation and certification passed on September 3, 2026. Packaged and portable builds share `%LOCALAPPDATA%\CaptureView\`; uninstall preserves this data |
 | Manual device refresh | Done | Removal, reconnection, endpoint refresh, format refresh, and available-selection preservation verified on hardware |
 | User settings | Done | `%LOCALAPPDATA%\CaptureView\settings.json` |
-| Logging | Initial | Startup, device counts, and HRESULT failures |
+| Logging | Done | Startup, device counts, negotiated video/audio formats, renderer path, bounded periodic statistics, and HRESULT failures |
 | D3D11 rendering and aspect fit | Initial verified | RGB32 texture upload, shader display, aspect fit, responsive resize, and window movement verified on Windows |
 | Normal/borderless/fullscreen | Done | Borderless fullscreen; style transitions preserve top-level visibility; no display-mode change |
 | Always on top/context menu/hotkeys | Done | Viewer shell behavior |
 | Capture-relative window sizing | Initial verified | Context menu offers 50/75/100/125/150%; move preserves scale, resize selects Custom, resolution changes reset to 100%, and Per-Monitor DPI V2 prevents 150% bitmap scaling |
-| Status overlay | Initial verified | Toggleable two-line overlay shows device/format plus measured video FPS, active audio format, queue depth, and mute state; verified with NV12 and MJPEG |
+| Status overlay | Verified | Toggleable three-line overlay shows device/format, input/render FPS, latest-frame replacements, video slot depth, active audio format, audio queue depth, and mute state |
 | Media Foundation video capture | Initial verified | Async Source Reader callback, RGB32 decoder output, latest-frame exchange, D3D11 display, Settings, and exit verified on hardware |
-| NV12/YUY2/MJPEG formats | Partial | NV12 verified at 1280x720/50; MJPEG decode/display and continuous scrolling verified at 1920x1080/30; YUY2 remains untested |
-| Event-driven WASAPI monitoring | Initial verified | USB Digital Audio monitoring, live mute, Settings stop/restart, and clean exit verified at 48kHz stereo float; no obvious AV skew in a qualitative test |
+| NV12/YUY2/MJPEG formats | Verified | Native NV12 and YUY2 plus MJPEG-to-NV12 verified through the D3D11 Video Processor at 1920x1080/60 on supporting hardware; RGB32 fallback retained |
+| Event-driven WASAPI monitoring | Verified | Matching 48kHz stereo float and mismatched 48kHz-input/44.1kHz-output paths verified; Audio Engine conversion, live mute, Settings restart, bounded queue, and clean exit passed |
 | Disconnect recovery | Initial verified | Physical USB removal is detected without freezing; error acknowledgement returns to a fresh setup UI with refreshed device lists |
 | Profiles/CLI | Planned | Kept outside the initial shell |
 
