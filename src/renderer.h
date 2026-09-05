@@ -16,6 +16,7 @@ class Renderer {
   HRESULT RenderFrame(VideoPixelFormat format, const std::uint8_t* pixels,
                       UINT width, UINT height, UINT stride);
   bool PrepareNativeYuv(VideoPixelFormat format, UINT width, UINT height);
+  void SetFlip(bool horizontal, bool vertical);
   void SetSourceSize(UINT width, UINT height) { source_width_ = width; source_height_ = height; }
   void SetOverlay(bool enabled, std::wstring text) {
     overlay_enabled_ = enabled;
@@ -26,6 +27,7 @@ class Renderer {
   HRESULT CreateOverlayResources();
   void DrawOverlay();
   HRESULT CreateShaders();
+  void UpdateTransform();
   HRESULT EnsureFrameTexture(UINT width, UINT height);
   HRESULT EnsureYuvResources(VideoPixelFormat format, UINT width, UINT height);
   HRESULT CreateVideoOutputView();
@@ -40,6 +42,7 @@ class Renderer {
   Microsoft::WRL::ComPtr<ID3D11VertexShader> vertex_shader_;
   Microsoft::WRL::ComPtr<ID3D11PixelShader> pixel_shader_;
   Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler_;
+  Microsoft::WRL::ComPtr<ID3D11Buffer> transform_buffer_;
   Microsoft::WRL::ComPtr<ID3D11Texture2D> frame_texture_;
   Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> frame_view_;
   Microsoft::WRL::ComPtr<ID3D11VideoDevice> video_device_;
@@ -58,6 +61,8 @@ class Renderer {
   Microsoft::WRL::ComPtr<IDWriteTextFormat> overlay_format_;
   std::wstring overlay_text_;
   bool overlay_enabled_ = false;
+  bool flip_horizontal_ = false;
+  bool flip_vertical_ = false;
   UINT texture_width_ = 0, texture_height_ = 0;
   VideoPixelFormat yuv_format_{};
   UINT yuv_width_ = 0, yuv_height_ = 0;

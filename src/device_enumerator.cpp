@@ -19,6 +19,7 @@ std::wstring SubtypeName(const GUID& subtype) {
   if (subtype == MFVideoFormat_YUY2) return L"YUY2";
   if (subtype == MFVideoFormat_MJPG) return L"MJPEG";
   if (subtype == MFVideoFormat_RGB32) return L"RGB32";
+  if (subtype == MFVideoFormat_RGB24) return L"RGB24";
   wchar_t text[64]{};
   StringFromGUID2(subtype, text, ARRAYSIZE(text));
   return text;
@@ -29,7 +30,8 @@ int SubtypeRank(const GUID& subtype) {
   if (subtype == MFVideoFormat_YUY2) return 1;
   if (subtype == MFVideoFormat_MJPG) return 2;
   if (subtype == MFVideoFormat_RGB32) return 3;
-  return 4;
+  if (subtype == MFVideoFormat_RGB24) return 4;
+  return 5;
 }
 
 int TargetRank(const VideoFormatInfo& format) {

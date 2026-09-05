@@ -7,13 +7,14 @@
 namespace cv {
 namespace {
 constexpr char kVertexShader[] = R"(
+cbuffer Transform : register(b0) { float2 uvScale; float2 uvOffset; };
 struct Output { float4 position : SV_Position; float2 uv : TEXCOORD0; };
 Output main(uint id : SV_VertexID) {
   float2 positions[3] = { float2(-1, -1), float2(-1, 3), float2(3, -1) };
   float2 uvs[3] = { float2(0, 1), float2(0, -1), float2(2, 1) };
   Output output;
   output.position = float4(positions[id], 0, 1);
-  output.uv = uvs[id];
+  output.uv = uvs[id] * uvScale + uvOffset;
   return output;
 })";
 constexpr char kPixelShader[] = R"(
@@ -84,7 +85,30 @@ HRESULT Renderer::CreateShaders() {
   desc.AddressU = desc.AddressV = desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
   desc.MaxLOD = D3D11_FLOAT32_MAX;
   if (SUCCEEDED(hr)) hr = device_->CreateSamplerState(&desc, &sampler_);
+  D3D11_BUFFER_DESC transform{};
+  transform.ByteWidth = sizeof(float) * 4;
+  transform.Usage = D3D11_USAGE_DEFAULT;
+  transform.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+  if (SUCCEEDED(hr)) {
+    hr = device_->CreateBuffer(&transform, nullptr, &transform_buffer_);
+  }
+  if (SUCCEEDED(hr)) UpdateTransform();
   return hr;
+}
+void Renderer::SetFlip(bool horizontal, bool vertical) {
+  flip_horizontal_ = horizontal;
+  flip_vertical_ = vertical;
+  UpdateTransform();
+}
+void Renderer::UpdateTransform() {
+  if (!context_ || !transform_buffer_) return;
+  const float transform[4] = {
+      flip_horizontal_ ? -1.0f : 1.0f,
+      flip_vertical_ ? -1.0f : 1.0f,
+      flip_horizontal_ ? 1.0f : 0.0f,
+      flip_vertical_ ? 1.0f : 0.0f};
+  context_->UpdateSubresource(transform_buffer_.Get(), 0, nullptr, transform, 0,
+                              0);
 }
 HRESULT Renderer::EnsureFrameTexture(UINT width, UINT height) {
   if (frame_texture_ && width == texture_width_ && height == texture_height_) return S_OK;
@@ -281,17 +305,49 @@ HRESULT Renderer::RenderYuv(VideoPixelFormat format,
   }
   auto* mapped_destination = static_cast<std::uint8_t*>(mapped.pData);
   for (UINT row = 0; row < height; ++row) {
-    std::memcpy(mapped_destination +
-                    static_cast<size_t>(row) * mapped.RowPitch,
-                pixels + static_cast<size_t>(row) * stride, row_bytes);
+    auto* destination = mapped_destination +
+                        static_cast<size_t>(row) * mapped.RowPitch;
+    const UINT source_row = flip_vertical_ ? height - 1 - row : row;
+    const auto* source = pixels + static_cast<size_t>(source_row) * stride;
+    if (!flip_horizontal_) {
+      std::memcpy(destination, source, row_bytes);
+    } else if (format == VideoPixelFormat::Nv12) {
+      for (UINT column = 0; column < width; ++column) {
+        destination[column] = source[width - 1 - column];
+      }
+    } else {
+      // YUY2 stores two pixels as Y0 U Y1 V. Reverse the macropixels and
+      // exchange their two luma samples while retaining each shared U/V pair.
+      for (UINT column = 0; column < width; column += 2) {
+        const UINT source_offset = (width - 2 - column) * 2;
+        const UINT destination_offset = column * 2;
+        destination[destination_offset] = source[source_offset + 2];
+        destination[destination_offset + 1] = source[source_offset + 1];
+        destination[destination_offset + 2] = source[source_offset];
+        destination[destination_offset + 3] = source[source_offset + 3];
+      }
+    }
   }
   if (format == VideoPixelFormat::Nv12) {
     const auto* source_uv = pixels + static_cast<size_t>(stride) * height;
     auto* destination_uv =
         mapped_destination + static_cast<size_t>(mapped.RowPitch) * height;
     for (UINT row = 0; row < height / 2; ++row) {
-      std::memcpy(destination_uv + static_cast<size_t>(row) * mapped.RowPitch,
-                  source_uv + static_cast<size_t>(row) * stride, width);
+      auto* destination = destination_uv +
+                          static_cast<size_t>(row) * mapped.RowPitch;
+      const UINT source_row =
+          flip_vertical_ ? height / 2 - 1 - row : row;
+      const auto* source = source_uv + static_cast<size_t>(source_row) * stride;
+      if (!flip_horizontal_) {
+        std::memcpy(destination, source, width);
+      } else {
+        // NV12 chroma is interleaved UV; reverse pairs without swapping U/V.
+        for (UINT column = 0; column < width; column += 2) {
+          const UINT source_offset = width - 2 - column;
+          destination[column] = source[source_offset];
+          destination[column + 1] = source[source_offset + 1];
+        }
+      }
     }
   }
   context_->Unmap(yuv_staging_texture_.Get(), 0);
@@ -365,6 +421,7 @@ HRESULT Renderer::RenderFrame(VideoPixelFormat format,
   context_->IASetInputLayout(nullptr);
   context_->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
   context_->VSSetShader(vertex_shader_.Get(), nullptr, 0);
+  context_->VSSetConstantBuffers(0, 1, transform_buffer_.GetAddressOf());
   context_->PSSetShader(pixel_shader_.Get(), nullptr, 0);
   context_->PSSetShaderResources(0, 1, frame_view_.GetAddressOf());
   context_->PSSetSamplers(0, 1, sampler_.GetAddressOf());

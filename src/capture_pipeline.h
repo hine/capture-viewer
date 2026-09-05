@@ -14,7 +14,7 @@
 
 namespace cv {
 
-enum class VideoPixelFormat { Bgra32, Nv12, Yuy2 };
+enum class VideoPixelFormat { Bgr24, Bgra32, Nv12, Yuy2 };
 
 struct VideoFrame {
   VideoPixelFormat format = VideoPixelFormat::Bgra32;

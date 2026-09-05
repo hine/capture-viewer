@@ -28,6 +28,7 @@ constexpr int kSetupTitle = 110, kSetupSubtitle = 111, kSetupHelper = 112,
 constexpr int kMenuFullscreen = 201, kMenuBorderless = 202, kMenuTopmost = 203,
               kMenuMute = 204, kMenuSettings = 205, kMenuExit = 206,
               kMenuOverlay = 207, kMenuAbout = 208,
+              kMenuFlipHorizontal = 209, kMenuFlipVertical = 210,
               kMenuScale50 = 250, kMenuScale75 = 275,
               kMenuScale100 = 300, kMenuScale125 = 325, kMenuScale150 = 350;
 constexpr COLORREF kSetupBackground = RGB(246, 248, 251);
@@ -145,6 +146,16 @@ LRESULT App::HandleMessage(HWND window, UINT message, WPARAM wparam, LPARAM lpar
         case kMenuOverlay:
           settings_.status_overlay = !settings_.status_overlay;
           UpdateStatusOverlay();
+          SaveSettings(settings_path_, settings_);
+          break;
+        case kMenuFlipHorizontal:
+          settings_.flip_horizontal = !settings_.flip_horizontal;
+          renderer_.SetFlip(settings_.flip_horizontal, settings_.flip_vertical);
+          SaveSettings(settings_path_, settings_);
+          break;
+        case kMenuFlipVertical:
+          settings_.flip_vertical = !settings_.flip_vertical;
+          renderer_.SetFlip(settings_.flip_horizontal, settings_.flip_vertical);
           SaveSettings(settings_path_, settings_);
           break;
         case kMenuAbout: ShowAbout(); break;
@@ -654,6 +665,7 @@ void App::StartViewer() {
     CreateSetupControls(); return;
   }
   renderer_.SetSourceSize(format.width, format.height);
+  renderer_.SetFlip(settings_.flip_horizontal, settings_.flip_vertical);
   const VideoPixelFormat requested_format =
       format.subtype == MFVideoFormat_NV12
           ? VideoPixelFormat::Nv12
@@ -668,9 +680,11 @@ void App::StartViewer() {
       format.subtype == MFVideoFormat_MJPG ? L"NV12 (MJPEG decode)"
                                            : format.subtype_name;
   const std::wstring renderer_path =
-      native_yuv ? std::format(L"Renderer path: D3D11 Video Processor {}",
-                               native_path_name)
-                 : std::wstring(L"Renderer path: compatible RGB32");
+      format.subtype == MFVideoFormat_RGB24
+          ? L"Renderer path: native RGB24 CPU expansion to BGRA32"
+      : native_yuv ? std::format(L"Renderer path: D3D11 Video Processor {}",
+                                 native_path_name)
+                   : std::wstring(L"Renderer path: compatible RGB32");
   Logger::Instance().Info(renderer_path);
   const std::wstring video_name = [&] {
     const auto found = std::find_if(videos_.begin(), videos_.end(), [&](const DeviceInfo& device) {
@@ -777,6 +791,7 @@ void App::ToggleFullscreen() {
 void App::ShowContextMenu(POINT point) {
   HMENU menu = CreatePopupMenu();
   HMENU scale_menu = CreatePopupMenu();
+  HMENU flip_menu = CreatePopupMenu();
   const auto scale_item = [&](int id, int percent) {
     AppendMenuW(scale_menu,
                 MF_STRING | (settings_.window_scale_percent == percent ? MF_CHECKED : 0) |
@@ -798,6 +813,13 @@ void App::ShowContextMenu(POINT point) {
   AppendMenuW(menu, MF_STRING | (settings_.muted ? MF_CHECKED : 0), kMenuMute, L"Mute\tM");
   AppendMenuW(menu, MF_STRING | (settings_.status_overlay ? MF_CHECKED : 0),
               kMenuOverlay, L"Status Overlay\tI");
+  AppendMenuW(flip_menu,
+              MF_STRING | (settings_.flip_horizontal ? MF_CHECKED : 0),
+              kMenuFlipHorizontal, L"Horizontally");
+  AppendMenuW(flip_menu,
+              MF_STRING | (settings_.flip_vertical ? MF_CHECKED : 0),
+              kMenuFlipVertical, L"Vertically");
+  AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(flip_menu), L"Flip");
   AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
   AppendMenuW(menu, MF_STRING, kMenuSettings, L"Settings");
   AppendMenuW(menu, MF_STRING, kMenuAbout, L"About CaptureView");

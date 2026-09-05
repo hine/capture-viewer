@@ -61,6 +61,8 @@ Settings LoadSettings(const std::filesystem::path& path) {
   s.always_on_top = BoolValue(text, L"alwaysOnTop", false);
   s.muted = BoolValue(text, L"muted", false);
   s.status_overlay = BoolValue(text, L"statusOverlay", false);
+  s.flip_horizontal = BoolValue(text, L"flipHorizontal", false);
+  s.flip_vertical = BoolValue(text, L"flipVertical", false);
   s.window_scale_percent = IntValue(text, L"windowScalePercent", 100);
   if (s.window_scale_percent != 0 && s.window_scale_percent != 50 &&
       s.window_scale_percent != 75 && s.window_scale_percent != 100 &&
@@ -90,6 +92,10 @@ bool SaveSettings(const std::filesystem::path& path, const Settings& s) {
          << (s.always_on_top ? L"true" : L"false") << L",\n  \"muted\": "
          << (s.muted ? L"true" : L"false") << L",\n  \"statusOverlay\": "
          << (s.status_overlay ? L"true" : L"false")
+         << L",\n  \"flipHorizontal\": "
+         << (s.flip_horizontal ? L"true" : L"false")
+         << L",\n  \"flipVertical\": "
+         << (s.flip_vertical ? L"true" : L"false")
          << L",\n  \"windowScalePercent\": " << s.window_scale_percent << L"\n}\n";
   return output.good();
 }

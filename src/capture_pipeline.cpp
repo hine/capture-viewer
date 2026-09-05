@@ -1,6 +1,8 @@
 #include "capture_pipeline.h"
 #include "logger.h"
+#include <cstddef>
 #include <cstdlib>
+#include <cstring>
 #include <format>
 #include <mfapi.h>
 #include <mferror.h>
@@ -46,6 +48,7 @@ std::wstring VideoSubtypeName(const GUID& subtype) {
   if (subtype == MFVideoFormat_YUY2) return L"YUY2";
   if (subtype == MFVideoFormat_MJPG) return L"MJPEG";
   if (subtype == MFVideoFormat_RGB32) return L"RGB32";
+  if (subtype == MFVideoFormat_RGB24) return L"RGB24";
   return L"other";
 }
 
@@ -216,9 +219,12 @@ void CapturePipeline::CaptureLoop(std::wstring device_id,
       prefer_native_yuv_ && (format.subtype == MFVideoFormat_NV12 ||
                              format.subtype == MFVideoFormat_YUY2 ||
                              format.subtype == MFVideoFormat_MJPG);
+  const bool request_native_rgb24 = format.subtype == MFVideoFormat_RGB24;
   if (SUCCEEDED(hr)) {
     const GUID& output_subtype =
-        request_native_yuv
+        request_native_rgb24
+            ? MFVideoFormat_RGB24
+        : request_native_yuv
             ? (format.subtype == MFVideoFormat_MJPG ? MFVideoFormat_NV12
                                                      : format.subtype)
             : MFVideoFormat_RGB32;
@@ -234,9 +240,10 @@ void CapturePipeline::CaptureLoop(std::wstring device_id,
                              format.frame_rate_denominator);
   }
   if (SUCCEEDED(hr)) hr = reader->SetCurrentMediaType(stream, nullptr, output_type.Get());
-  if (FAILED(hr) && request_native_yuv) {
+  if (FAILED(hr) && (request_native_yuv || request_native_rgb24)) {
     Logger::Instance().Error(
-        L"Native YUV output negotiation failed; using RGB32 fallback", hr);
+        L"Preferred video output negotiation failed; using RGB32 fallback",
+        hr);
     hr = output_type->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_RGB32);
     if (SUCCEEDED(hr)) {
       hr = reader->SetCurrentMediaType(stream, nullptr, output_type.Get());
@@ -266,7 +273,9 @@ void CapturePipeline::CaptureLoop(std::wstring device_id,
     std::scoped_lock lock(reader_mutex_);
     reader_ = reader;
     active_format_ = format;
-    output_format_ = negotiated_subtype == MFVideoFormat_NV12
+    output_format_ = negotiated_subtype == MFVideoFormat_RGB24
+                         ? VideoPixelFormat::Bgr24
+                     : negotiated_subtype == MFVideoFormat_NV12
                          ? VideoPixelFormat::Nv12
                      : negotiated_subtype == MFVideoFormat_YUY2
                          ? VideoPixelFormat::Yuy2
@@ -275,7 +284,9 @@ void CapturePipeline::CaptureLoop(std::wstring device_id,
                          ? static_cast<unsigned>(
                                std::abs(static_cast<LONG>(negotiated_stride)))
                          : format.width *
-                               (output_format_ == VideoPixelFormat::Nv12
+                               (output_format_ == VideoPixelFormat::Bgr24
+                                    ? 3
+                                : output_format_ == VideoPixelFormat::Nv12
                                     ? 1
                                 : output_format_ == VideoPixelFormat::Yuy2 ? 2
                                                                           : 4);
@@ -309,22 +320,97 @@ HRESULT CapturePipeline::HandleReadSample(HRESULT status, DWORD flags,
   if (sample) {
     ComPtr<IMFMediaBuffer> buffer;
     hr = sample->ConvertToContiguousBuffer(&buffer);
-    BYTE* data = nullptr;
-    DWORD length = 0;
-    if (SUCCEEDED(hr)) hr = buffer->Lock(&data, nullptr, &length);
     const unsigned stride = output_stride_;
     const size_t luma_or_rgb_bytes =
         static_cast<size_t>(stride) * active_format_.height;
     const size_t required =
         luma_or_rgb_bytes +
         (output_format_ == VideoPixelFormat::Nv12 ? luma_or_rgb_bytes / 2 : 0);
-    if (SUCCEEDED(hr) && length >= required) {
-      VideoFrame frame;
-      frame.format = output_format_;
-      frame.width = active_format_.width;
-      frame.height = active_format_.height;
-      frame.stride = stride;
-      frame.pixels.assign(data, data + required);
+    VideoFrame frame;
+    frame.format = output_format_ == VideoPixelFormat::Bgr24
+                       ? VideoPixelFormat::Bgra32
+                       : output_format_;
+    frame.width = active_format_.width;
+    frame.height = active_format_.height;
+    frame.stride = output_format_ == VideoPixelFormat::Bgr24
+                       ? active_format_.width * 4
+                       : stride;
+    bool frame_ready = false;
+    if (SUCCEEDED(hr) &&
+        (output_format_ == VideoPixelFormat::Bgr24 ||
+         output_format_ == VideoPixelFormat::Bgra32)) {
+      ComPtr<IMF2DBuffer> buffer_2d;
+      if (SUCCEEDED(buffer.As(&buffer_2d))) {
+        BYTE* scanline = nullptr;
+        LONG pitch = 0;
+        const HRESULT lock_2d_result = buffer_2d->Lock2D(&scanline, &pitch);
+        const size_t source_row_bytes =
+            static_cast<size_t>(active_format_.width) *
+            (output_format_ == VideoPixelFormat::Bgr24 ? 3 : 4);
+        if (SUCCEEDED(lock_2d_result) && scanline &&
+            static_cast<size_t>(std::abs(pitch)) >= source_row_bytes) {
+          const size_t destination_row_bytes =
+              static_cast<size_t>(active_format_.width) * 4;
+          frame.stride = static_cast<unsigned>(destination_row_bytes);
+          frame.pixels.resize(destination_row_bytes * active_format_.height);
+          for (unsigned row = 0; row < active_format_.height; ++row) {
+            const BYTE* source =
+                scanline + static_cast<std::ptrdiff_t>(pitch) * row;
+            BYTE* destination =
+                frame.pixels.data() + destination_row_bytes * row;
+            if (output_format_ == VideoPixelFormat::Bgr24) {
+              for (unsigned column = 0; column < active_format_.width;
+                   ++column) {
+                destination[column * 4] = source[column * 3];
+                destination[column * 4 + 1] = source[column * 3 + 1];
+                destination[column * 4 + 2] = source[column * 3 + 2];
+                destination[column * 4 + 3] = 0xFF;
+              }
+            } else {
+              std::memcpy(destination, source, destination_row_bytes);
+            }
+          }
+          frame_ready = true;
+        }
+        if (SUCCEEDED(lock_2d_result)) buffer_2d->Unlock2D();
+      }
+    }
+    BYTE* data = nullptr;
+    if (SUCCEEDED(hr) && !frame_ready) {
+      DWORD length = 0;
+      hr = buffer->Lock(&data, nullptr, &length);
+      if (SUCCEEDED(hr) && length >= required) {
+        const size_t destination_stride =
+            output_format_ == VideoPixelFormat::Bgr24
+                ? static_cast<size_t>(active_format_.width) * 4
+                : stride;
+        frame.stride = static_cast<unsigned>(destination_stride);
+        const size_t destination_luma_or_rgb_bytes =
+            destination_stride * active_format_.height;
+        const size_t destination_size =
+            destination_luma_or_rgb_bytes +
+            (output_format_ == VideoPixelFormat::Nv12
+                 ? destination_luma_or_rgb_bytes / 2
+                 : 0);
+        frame.pixels.resize(destination_size);
+        if (output_format_ == VideoPixelFormat::Bgr24) {
+          for (unsigned row = 0; row < active_format_.height; ++row) {
+            const BYTE* source = data + static_cast<size_t>(stride) * row;
+            BYTE* destination = frame.pixels.data() + destination_stride * row;
+            for (unsigned column = 0; column < active_format_.width; ++column) {
+              destination[column * 4] = source[column * 3];
+              destination[column * 4 + 1] = source[column * 3 + 1];
+              destination[column * 4 + 2] = source[column * 3 + 2];
+              destination[column * 4 + 3] = 0xFF;
+            }
+          }
+        } else {
+          std::memcpy(frame.pixels.data(), data, destination_size);
+        }
+        frame_ready = true;
+      }
+    }
+    if (frame_ready) {
       {
         std::scoped_lock lock(frame_mutex_);
         ++received_frames_;

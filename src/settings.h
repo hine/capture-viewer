@@ -18,6 +18,8 @@ struct Settings {
   bool always_on_top = false;
   bool muted = false;
   bool status_overlay = false;
+  bool flip_horizontal = false;
+  bool flip_vertical = false;
   int window_scale_percent = 100;  // 0 means a manually resized custom size.
 };
 std::filesystem::path AppDataRoot();

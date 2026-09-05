@@ -103,6 +103,27 @@ notes that are intentionally kept out of the public-facing README.
 - A deliberately mismatched 48 kHz input / 44.1 kHz output test also passed.
   The 48 kHz stereo-float interchange stream was converted by Windows Audio
   Engine and played normally without dropouts, speed changes, or pitch changes.
+- A newly acquired capture device advertises native RGB24, including
+  1920x1080/60 and 1280x720/120 modes. RGB24 subtype naming was added; it keeps
+  using the existing Media Foundation RGB32 conversion/fallback path pending
+  hardware validation.
+- The first RGB24 1920x1080/60 run exposed a bottom-up frame: its native media
+  type reported stride `-5760`, and the converted RGB32 image was vertically
+  inverted. Compatible RGB32 buffers now normalize rows through `IMF2DBuffer`
+  signed pitch when available.
+- OBS XRGB comparison was materially sharper than Media Foundation's converted
+  RGB32 output at the same 1920x1080/60 source. RGB24 is therefore retained as
+  the Source Reader output and expanded directly from BGR24 to BGRA32 without
+  color conversion or interpolation; hardware revalidation remains.
+- Direct RGB24 expansion restored fine text detail, matching the OBS-quality
+  result. The device's orientation remained inconsistent with the apparent
+  stride/pitch metadata, so CaptureView does not encode a device-specific row
+  heuristic. Persisted horizontal and vertical correction controls are applied
+  by the renderer without adding another frame buffer or transfer. RGB uses a
+  shader UV transform; YUV applies correction while filling its existing GPU
+  staging texture. Both controls and the corrected 1920x1080/60 RGB24 result
+  passed hardware validation. Native NV12 and YUY2 also passed normal display
+  and orientation-correction regression checks after the NV12 UV-plane fix.
 
 ### v0.9.0 — first public preview (released)
 
