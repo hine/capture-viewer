@@ -7,8 +7,9 @@ notes that are intentionally kept out of the public-facing README.
 
 ### v1.1.0 — compatibility and lower video overhead (release candidate)
 
-- Feature development is frozen. Release packaging and final sustained-run,
-  interaction, and disconnect smoke tests remain before publication.
+- Feature development is frozen. Sustained-run, interaction, and disconnect /
+  reconnect smoke tests pass on hardware. Release packaging and packaged-build
+  launch verification remain before publication.
 
 - The ordered implementation and validation plan is documented in
   [v1.1-roadmap.md](v1.1-roadmap.md).
@@ -132,6 +133,9 @@ notes that are intentionally kept out of the public-facing README.
   staging texture. Both controls and the corrected 1920x1080/60 RGB24 result
   passed hardware validation. Native NV12 and YUY2 also passed normal display
   and orientation-correction regression checks after the NV12 UV-plane fix.
+- The final 1.1 hardware interaction pass covered resize, normal/borderless/
+  fullscreen transitions, Settings return and capture restart, clean shutdown,
+  USB disconnect recovery, and reconnection. No failure was observed.
 
 ### v0.9.0 — first public preview (released)
 
