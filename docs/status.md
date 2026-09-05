@@ -139,7 +139,11 @@ notes that are intentionally kept out of the public-facing README.
 - The x64 Release portable package was generated as
   `CaptureView-1.1.0-x64.zip`. Its ZIP contents and SHA-256 sidecar matched,
   the packaged executable reported file/product version `1.1.0`, and a launch
-  smoke test passed. MSIX generation and packaged validation remain.
+  smoke test passed. The `1.1.0.0` MSIX and symbol-bearing `.msixupload` were
+  also generated locally with the existing Partner Center identity metadata.
+  Their manifest architecture/version, payload, Release executable version,
+  and PDB-bearing `.appxsym` structure passed inspection. Signed installation
+  and launch validation remain.
 
 ### v0.9.0 — first public preview (released)
 
