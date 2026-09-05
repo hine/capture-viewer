@@ -9,8 +9,8 @@ notes that are intentionally kept out of the public-facing README.
 
 - Feature development is frozen. Sustained-run, interaction, disconnect /
   reconnect, format-transition, and stream-timeout smoke tests pass on
-  hardware. Release packages must be regenerated from the final timeout-aware
-  code and the packaged build revalidated before publication.
+  hardware. The final portable package passes launch validation; the Store
+  package must be regenerated and revalidated before publication.
 
 - The ordered implementation and validation plan is documented in
   [v1.1-roadmap.md](v1.1-roadmap.md).
@@ -156,15 +156,14 @@ notes that are intentionally kept out of the public-facing README.
   direct RGB24 capture in testing. No device- or format-pair-specific automatic
   transition workaround is encoded.
 - The x64 Release portable package was generated as
-  `CaptureView-1.1.0-x64.zip`. Its ZIP contents and SHA-256 sidecar matched,
-  the packaged executable reported file/product version `1.1.0`, and a launch
-  smoke test passed. The `1.1.0.0` MSIX and symbol-bearing `.msixupload` were
-  also generated locally with the existing Partner Center identity metadata.
-  Their manifest architecture/version, payload, Release executable version,
-  and PDB-bearing `.appxsym` structure passed inspection. Signed installation
-  exposed the hardware-dependent transition stall described above. These
-  pre-timeout artifacts are superseded and must not be submitted; final
-  portable and Store packages require regeneration and validation.
+  `CaptureView-1.1.0-x64.zip` from the final timeout-aware Release build. Its
+  executable exactly matched the verified build, the ZIP contents and SHA-256
+  sidecar matched, and the packaged build passed launch, capture, Settings
+  return, and shutdown smoke checks. The final ZIP SHA-256 is
+  `0d62b9d32913452aad7c05a7d8a345dd607e015d7e0b55f99ce52ff898481001`.
+  The earlier `1.1.0.0` MSIX and symbol-bearing `.msixupload` predate the
+  timeout fix and must not be submitted; final Store artifacts require
+  regeneration and validation.
 
 ### v0.9.0 — first public preview (released)
 
