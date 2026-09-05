@@ -91,6 +91,11 @@ notes that are intentionally kept out of the public-facing README.
   usage was about 6% on the Radeon RX 6600 XT, though this includes the desktop
   and other applications and is not attributable to CaptureView alone. A
   longer-duration observation remains.
+- A subsequent single-process 1920x1080/60 run remained stable for several
+  hours without a visible failure. Task Manager showed CaptureView at about
+  1.0% CPU and 28.4 MB working set at the sampled instant. Total Radeon RX 6600
+  XT usage was about 4% at 46 degrees C; this remains a system-wide reading.
+  The v1.1 sustained-run gate passes on this hardware.
 - A VSync diagnostic at native NV12 1920x1080/60 initially held 60.0 fps
   input/render with zero replacements, video slot depth 0, a 10 ms audio queue,
   and about 4% system-wide GPU 3D usage, but became unresponsive after a longer
