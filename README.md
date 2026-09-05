@@ -107,6 +107,12 @@ to 100%; manual resizing is stored as **Custom**.
 
 Settings and logs are stored under `%LOCALAPPDATA%\CaptureView\`.
 
+Some capture devices deliver video upside down or horizontally mirrored, or
+report orientation metadata that does not match the delivered image. The
+right-click **Flip** submenu provides independent horizontal and vertical
+display correction for these inputs. The correction is saved and does not
+modify the source signal.
+
 ## Troubleshooting capture stalls
 
 Hardware-dependent UVC device or driver behavior has been observed where a
@@ -240,6 +246,11 @@ cmake --build build --config Release
 リサイズした場合は**Custom**として保存します。
 
 設定とログは`%LOCALAPPDATA%\CaptureView\`に保存されます。
+
+一部のキャプチャデバイスでは、入力映像が上下反転または左右反転していたり、通知
+される向きの情報と実際の映像が一致しなかったりする場合があります。右クリック
+メニューの**Flip**では、このような入力に対して上下・左右を個別に表示補正できます。
+補正設定は保存され、入力元の映像信号そのものは変更しません。
 
 ## 映像が停止した場合
 
