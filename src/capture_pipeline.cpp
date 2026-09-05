@@ -124,6 +124,7 @@ bool CapturePipeline::Start(const std::wstring& device_id,
   received_frames_ = 0;
   dropped_frames_ = 0;
   queue_depth_ = 0;
+  callback_count_ = 0;
   stop_event_ = CreateEventW(nullptr, TRUE, FALSE, nullptr);
   if (!stop_event_) {
     last_error_ = HRESULT_FROM_WIN32(GetLastError());
@@ -294,7 +295,24 @@ void CapturePipeline::CaptureLoop(std::wstring device_id,
   Logger::Instance().Info(std::format(L"Video capture started: {}", format.DisplayName()));
   hr = reader->ReadSample(stream, 0, nullptr, nullptr, nullptr, nullptr);
   if (FAILED(hr)) PublishError(hr);
-  WaitForSingleObject(stop_event_, INFINITE);
+  std::uint64_t previous_callback_count = callback_count_.load();
+  unsigned idle_intervals = 0;
+  while (WaitForSingleObject(stop_event_, 1000) == WAIT_TIMEOUT) {
+    const std::uint64_t callback_count = callback_count_.load();
+    if (callback_count == previous_callback_count) {
+      ++idle_intervals;
+    } else {
+      idle_intervals = 0;
+      previous_callback_count = callback_count;
+    }
+    if (idle_intervals >= 2) {
+      Logger::Instance().Error(
+          L"Video stream stalled: no source-reader callback for 2 seconds",
+          HRESULT_FROM_WIN32(ERROR_TIMEOUT));
+      PublishError(HRESULT_FROM_WIN32(ERROR_TIMEOUT));
+      break;
+    }
+  }
   reader->Flush(stream);
 
   {
@@ -311,6 +329,7 @@ void CapturePipeline::CaptureLoop(std::wstring device_id,
 HRESULT CapturePipeline::HandleReadSample(HRESULT status, DWORD flags,
                                           IMFSample* sample) {
   if (stopping_) return S_OK;
+  ++callback_count_;
   if (FAILED(status)) { PublishError(status); return S_OK; }
   if (flags & (MF_SOURCE_READERF_ENDOFSTREAM | MF_SOURCE_READERF_ERROR)) {
     PublishError(MF_E_END_OF_STREAM); return S_OK;

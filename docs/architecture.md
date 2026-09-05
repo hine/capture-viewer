@@ -52,6 +52,20 @@ The setup screen also provides manual device refresh. Removing and reconnecting
 the USB capture, refreshing video/audio endpoints and native formats, and
 preserving still-available selections passed without restarting the process.
 
+The capture worker also monitors Source Reader callback progress independently
+of pixel format. If no callback arrives for two seconds, it reports a timeout
+through the normal capture-error path instead of leaving a black viewer that
+appears to be running. Recovery deliberately does not force a hard-coded
+intermediate format: advertised format transitions are device-dependent, and a
+valid black input cannot be identified reliably from pixel values alone. The
+setup error instead recommends choosing another format or physically
+reconnecting the device, which commonly resets device-side streaming state.
+The reproduced failure is classified as hardware/driver-side behavior: Media
+Foundation accepted the target type and the next read request, but Source Reader
+callbacks ceased before another sample entered CaptureView's buffer conversion
+or rendering path. This classification applies to that measured transition and
+does not assume that every black-frame symptom has the same cause.
+
 The initial audio path first tries the selected input endpoint's mix format on
 the output, then tries the output mix format on the input. It then negotiates
 common 48kHz or 44.1kHz stereo float/PCM16 stream formats, letting each shared

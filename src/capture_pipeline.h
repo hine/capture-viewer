@@ -69,6 +69,7 @@ class CapturePipeline {
   VideoPixelFormat output_format_ = VideoPixelFormat::Bgra32;
   unsigned output_stride_ = 0;
   bool prefer_native_yuv_ = false;
+  std::atomic<std::uint64_t> callback_count_{0};
 };
 
 }  // namespace cv

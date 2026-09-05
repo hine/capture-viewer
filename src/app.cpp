@@ -231,9 +231,14 @@ LRESULT App::HandleMessage(HWND window, UINT message, WPARAM wparam, LPARAM lpar
       capture_.Stop();
       viewer_mode_ = false;
       renderer_ = {};
+      const std::wstring guidance =
+          hr == HRESULT_FROM_WIN32(ERROR_TIMEOUT)
+              ? L"The device stopped delivering video frames. Select another "
+                L"format or reconnect the device before trying again."
+              : L"The device may be disconnected or already in use.";
       MessageBoxW(window_,
           (L"Video capture stopped.\n\n" + HResultText(hr) +
-           L"\n\nThe device may be disconnected or already in use.").c_str(),
+           L"\n\n" + guidance).c_str(),
           L"Failed to capture video", MB_ICONERROR);
       RecreateSetupWindow();
       return 0;

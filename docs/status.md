@@ -7,9 +7,10 @@ notes that are intentionally kept out of the public-facing README.
 
 ### v1.1.0 — compatibility and lower video overhead (release candidate)
 
-- Feature development is frozen. Sustained-run, interaction, and disconnect /
-  reconnect smoke tests pass on hardware. Release packaging and packaged-build
-  launch verification remain before publication.
+- Feature development is frozen. Sustained-run, interaction, disconnect /
+  reconnect, format-transition, and stream-timeout smoke tests pass on
+  hardware. Release packages must be regenerated from the final timeout-aware
+  code and the packaged build revalidated before publication.
 
 - The ordered implementation and validation plan is documented in
   [v1.1-roadmap.md](v1.1-roadmap.md).
@@ -136,6 +137,24 @@ notes that are intentionally kept out of the public-facing README.
 - The final 1.1 hardware interaction pass covered resize, normal/borderless/
   fullscreen transitions, Settings return and capture restart, clean shutdown,
   USB disconnect recovery, and reconnection. No failure was observed.
+- Additional RGB24 transition testing on `USB3 PLUS Video` exposed a
+  device-side streaming-state failure. RGB24 1920x1080/60 starts normally after
+  USB reconnection and after a YUY2 session, but can stall after MJPEG at either
+  30 or 60 fps; an NV12-to-RGB24 transition is intermittent. In the MJPEG case,
+  the Source Reader returned an initial stream tick and one uniform-value frame,
+  then stopped issuing callbacks despite accepting the next read request.
+  The failure occurs before another frame reaches application image processing;
+  rendering, RGB expansion, and flip processing are therefore ruled out for
+  this reproduced case. USB reconnection restoring direct RGB24 capture further
+  identifies it as hardware/driver streaming-state behavior rather than a
+  CaptureView format-conversion defect.
+- Capture now treats two seconds without a Source Reader callback as a general
+  stream timeout and returns through the existing capture-error/setup path.
+  Normal NV12, YUY2, and MJPEG playback and YUY2-to-RGB24 transition passed the
+  hardware regression check without false timeouts. The timeout message advises
+  selecting another format or reconnecting the USB device; reconnection restored
+  direct RGB24 capture in testing. No device- or format-pair-specific automatic
+  transition workaround is encoded.
 - The x64 Release portable package was generated as
   `CaptureView-1.1.0-x64.zip`. Its ZIP contents and SHA-256 sidecar matched,
   the packaged executable reported file/product version `1.1.0`, and a launch
@@ -143,7 +162,9 @@ notes that are intentionally kept out of the public-facing README.
   also generated locally with the existing Partner Center identity metadata.
   Their manifest architecture/version, payload, Release executable version,
   and PDB-bearing `.appxsym` structure passed inspection. Signed installation
-  and launch validation remain.
+  exposed the hardware-dependent transition stall described above. These
+  pre-timeout artifacts are superseded and must not be submitted; final
+  portable and Store packages require regeneration and validation.
 
 ### v0.9.0 — first public preview (released)
 

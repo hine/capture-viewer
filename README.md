@@ -107,6 +107,20 @@ to 100%; manual resizing is stored as **Custom**.
 
 Settings and logs are stored under `%LOCALAPPDATA%\CaptureView\`.
 
+## Troubleshooting capture stalls
+
+Hardware-dependent UVC device or driver behavior has been observed where a
+device stops delivering frames after changing between advertised video formats,
+even though Media Foundation accepted the new format successfully. In the
+verified case, Source Reader callbacks stopped before frames reached
+CaptureView's conversion, flip, or rendering code; it was not caused by those
+image-processing paths. CaptureView detects two seconds without a Source Reader
+callback, stops the stalled capture, and returns to setup with an error instead
+of remaining on an unresponsive black viewer. Try another format and then
+select the desired format again. If capture still does not resume,
+disconnecting and reconnecting the USB capture device is likely to reset its
+internal video state.
+
 ## Permissions and privacy
 
 CaptureView uses camera access to receive video from the selected capture
@@ -226,6 +240,18 @@ cmake --build build --config Release
 リサイズした場合は**Custom**として保存します。
 
 設定とログは`%LOCALAPPDATA%\CaptureView\`に保存されます。
+
+## 映像が停止した場合
+
+一部のUVCデバイスでは、デバイスが列挙した映像フォーマット間を切り替えた際、
+新しいフォーマットをMedia Foundationが正常に受理していても、ハードウェアまたは
+ドライバー依存の挙動によりフレーム供給が停止することが確認されています。実機で
+確認したケースでは、CaptureViewの色変換、反転、描画処理へフレームが届く前に
+Source Readerのコールバックが停止しており、これらの画像処理が原因ではありません。
+CaptureViewはコールバックが2秒間届かなければ停止を検出し、応答しない黒画面を
+残さずエラーを表示して設定画面へ戻ります。別のフォーマットを一度選んでから目的の
+フォーマットを選び直してください。それでも復旧しない場合は、USBキャプチャデバイス
+を抜き差しすると、デバイス内部の映像状態がリセットされて復旧する可能性が高いです。
 
 ## 権限とプライバシー
 
