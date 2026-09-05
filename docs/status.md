@@ -9,8 +9,8 @@ notes that are intentionally kept out of the public-facing README.
 
 - Feature development is frozen. Sustained-run, interaction, disconnect /
   reconnect, format-transition, and stream-timeout smoke tests pass on
-  hardware. The final portable package passes launch validation; the Store
-  package must be regenerated and revalidated before publication.
+  hardware. Final portable and Store packages have been regenerated and pass
+  packaged-build validation. The release candidate is ready for publication.
 
 - The ordered implementation and validation plan is documented in
   [v1.1-roadmap.md](v1.1-roadmap.md).
@@ -161,9 +161,16 @@ notes that are intentionally kept out of the public-facing README.
   sidecar matched, and the packaged build passed launch, capture, Settings
   return, and shutdown smoke checks. The final ZIP SHA-256 is
   `0d62b9d32913452aad7c05a7d8a345dd607e015d7e0b55f99ce52ff898481001`.
-  The earlier `1.1.0.0` MSIX and symbol-bearing `.msixupload` predate the
-  timeout fix and must not be submitted; final Store artifacts require
-  regeneration and validation.
+  The final timeout-aware `1.1.0.0` MSIX and symbol-bearing `.msixupload` were
+  regenerated from the same Release build. Manifest version/architecture,
+  payload, Release-executable identity, and PDB-bearing `.appxsym` structure
+  passed inspection. A self-signed copy installed successfully and passed
+  version, NV12, YUY2, MJPEG, YUY2-to-RGB24, MJPEG-to-RGB24 timeout, Settings
+  return, USB disconnect/reconnect, and shutdown checks. The unsigned MSIX
+  SHA-256 is
+  `1cd0f8eee30794ef54b3405599bcc9b4809c8ed7cfb7aeea8b177e078ce7184e`;
+  the Store submission `.msixupload` SHA-256 is
+  `9cb495151d3a87cba1f8b40d55a2dcc4d668ff7e5063dec9b19646b0a169eb1a`.
 
 ### v0.9.0 — first public preview (released)
 
