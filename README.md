@@ -44,14 +44,16 @@ recording, streaming, scene composition, or single-instance restriction.
 ## Features
 
 - Native Win32 application with no third-party runtime libraries
-- Media Foundation video capture with NV12 and MJPEG verified on hardware
+- Media Foundation capture with native NV12, YUY2, RGB24, and MJPEG-to-NV12
+  paths verified on hardware
 - Independent WASAPI audio input and output selection
 - Event-driven audio monitoring and live mute
 - Normal, borderless, and fullscreen viewing modes
 - Always-on-top mode and multiple simultaneous application instances
 - Capture-relative window sizes: 50%, 75%, 100%, 125%, and 150%
 - Per-monitor DPI awareness for physical-pixel-accurate 100% display
-- Optional two-line status overlay for video FPS, audio format, and queue depth
+- Optional three-line status overlay for video FPS, audio format, and queue depth
+- Persisted horizontal and vertical display correction
 - Device refresh and graceful recovery when a capture device is disconnected
 - Persistent device, format, window, and viewer settings
 
@@ -163,14 +165,16 @@ CaptureViewは、USB HDMI/UVCキャプチャデバイスの映像と音声を快
 ## 特徴
 
 - 外部ランタイムライブラリを必要としないWin32ネイティブアプリケーション
-- Media Foundationによる映像キャプチャ（NV12・MJPEGを実機確認済み）
+- Media Foundationによる映像キャプチャ（ネイティブNV12・YUY2・RGB24、
+  MJPEGからNV12へのデコードを実機確認済み）
 - WASAPI音声入力・出力の独立選択
 - Event Driven方式による音声モニタリングとミュート
 - 通常、ボーダーレス、フルスクリーン表示
 - Always on Topとアプリケーションの複数同時起動
 - キャプチャ解像度基準の50%・75%・100%・125%・150%表示
 - 100%表示で物理ピクセルを一致させるPer-Monitor DPI対応
-- 映像FPS、音声形式、キュー深度を示す2行ステータスオーバーレイ
+- 映像FPS、音声形式、キュー深度を示す3行ステータスオーバーレイ
+- 保存可能な上下・左右の表示反転補正
 - デバイス一覧の更新と、切断時の設定画面への復帰
 - デバイス、フォーマット、ウィンドウ、表示設定の保存
 

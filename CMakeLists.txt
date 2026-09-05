@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(CaptureView VERSION 1.0.0 LANGUAGES CXX)
+project(CaptureView VERSION 1.1.0 LANGUAGES CXX)
 
 if(NOT WIN32)
   message(FATAL_ERROR "CaptureView targets Windows 10/11 only")

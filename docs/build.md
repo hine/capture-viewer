@@ -92,7 +92,7 @@ Partner Center identity at build time. After an x64 Release build, run:
   -IdentityName "<Package Identity Name>" `
   -Publisher "<Package Publisher>" `
   -PublisherDisplayName "<Publisher display name>" `
-  -Version "1.0.0.0"
+  -Version "1.1.0.0"
 ```
 
 The script requires a Windows 10 or Windows 11 SDK and writes an unsigned
@@ -270,7 +270,7 @@ Storeパッケージでは、公開可能なManifestテンプレートへビル�
   -IdentityName "<Package Identity Name>" `
   -Publisher "<Package Publisher>" `
   -PublisherDisplayName "<Publisher display name>" `
-  -Version "1.0.0.0"
+  -Version "1.1.0.0"
 ```
 
 Windows 10またはWindows 11 SDKが必要です。`dist-msix\`以下へ無署名の

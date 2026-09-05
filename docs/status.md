@@ -5,7 +5,10 @@ notes that are intentionally kept out of the public-facing README.
 
 ## Release targets
 
-### v1.1.0 — compatibility and lower video overhead (planned)
+### v1.1.0 — compatibility and lower video overhead (release candidate)
+
+- Feature development is frozen. Release packaging and final sustained-run,
+  interaction, and disconnect smoke tests remain before publication.
 
 - The ordered implementation and validation plan is documented in
   [v1.1-roadmap.md](v1.1-roadmap.md).
