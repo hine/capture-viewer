@@ -8,7 +8,7 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$PublisherDisplayName,
 
-    [string]$Version = "1.0.0.0",
+    [string]$Version = "1.1.0.0",
     [string]$BuildDirectory = "build",
     [string]$OutputDirectory = "dist-msix",
     [switch]$RequireSymbols

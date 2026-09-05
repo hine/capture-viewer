@@ -136,6 +136,10 @@ notes that are intentionally kept out of the public-facing README.
 - The final 1.1 hardware interaction pass covered resize, normal/borderless/
   fullscreen transitions, Settings return and capture restart, clean shutdown,
   USB disconnect recovery, and reconnection. No failure was observed.
+- The x64 Release portable package was generated as
+  `CaptureView-1.1.0-x64.zip`. Its ZIP contents and SHA-256 sidecar matched,
+  the packaged executable reported file/product version `1.1.0`, and a launch
+  smoke test passed. MSIX generation and packaged validation remain.
 
 ### v0.9.0 — first public preview (released)
 
