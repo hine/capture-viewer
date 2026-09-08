@@ -171,6 +171,15 @@ notes that are intentionally kept out of the public-facing README.
   `1cd0f8eee30794ef54b3405599bcc9b4809c8ed7cfb7aeea8b177e078ce7184e`;
   the Store submission `.msixupload` SHA-256 is
   `9cb495151d3a87cba1f8b40d55a2dcc4d668ff7e5063dec9b19646b0a169eb1a`.
+- Microsoft Store certification completed on September 8, 2026 with one
+  actionable failure under policy 10.2.4.1: the submitted executable used
+  MSVC's dynamic runtime while the Visual C++ Redistributable dependency was
+  not disclosed. The release configuration now statically links the MSVC
+  runtime, and Store package version `1.1.1.0` is reserved for the corrected
+  binary because changed MSIX contents require a unique package identity.
+  Packaging also rejects any future `MSVCP` or `VCRUNTIME` DLL import before
+  producing Store artifacts. Corrected-package build and hardware validation
+  remain pending.
 
 ### v0.9.0 — first public preview (released)
 

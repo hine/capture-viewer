@@ -8,7 +8,7 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$PublisherDisplayName,
 
-    [string]$Version = "1.1.0.0",
+    [string]$Version = "1.1.1.0",
     [string]$BuildDirectory = "build",
     [string]$OutputDirectory = "dist-msix",
     [switch]$RequireSymbols
@@ -43,6 +43,18 @@ $executable = @(
 ) | Where-Object { Test-Path $_ } | Select-Object -First 1
 if (-not $executable) {
     throw "CaptureView.exe was not found under '$buildRoot'. Build Release first."
+}
+
+$dumpbin = Get-Command dumpbin.exe -ErrorAction SilentlyContinue
+if (-not $dumpbin) {
+    throw "dumpbin.exe was not found. Run from a Developer PowerShell for Visual Studio."
+}
+$dependencies = (& $dumpbin.Source /dependents $executable 2>&1) -join "`n"
+if ($LASTEXITCODE -ne 0) {
+    throw "dumpbin failed while checking CaptureView.exe dependencies."
+}
+if ($dependencies -match '(?im)^\s*(?:MSVCP|VCRUNTIME)[^\s]*\.dll\s*$') {
+    throw "CaptureView.exe depends on the Visual C++ Redistributable. Rebuild with the static MSVC runtime before packaging."
 }
 
 $makeAppx = Get-ChildItem `
@@ -127,6 +139,7 @@ Move-Item ($uploadPath + ".zip") $uploadPath
 
 Write-Host "Created $msixPath"
 Write-Host "Created $uploadPath"
+Write-Host "Verified static MSVC runtime (no MSVCP/VCRUNTIME DLL dependency)"
 
 if ($env:GITHUB_OUTPUT) {
     "msix_path=$msixPath" | Add-Content $env:GITHUB_OUTPUT

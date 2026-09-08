@@ -1,6 +1,13 @@
 cmake_minimum_required(VERSION 3.24)
 project(CaptureView VERSION 1.1.0 LANGUAGES CXX)
 
+# Keep distributed builds self-contained. The default MSVC runtime selection
+# (/MD) requires the Visual C++ Redistributable to be installed separately,
+# which is not guaranteed on a clean Microsoft Store certification device.
+if(MSVC)
+  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
+
 if(NOT WIN32)
   message(FATAL_ERROR "CaptureView targets Windows 10/11 only")
 endif()

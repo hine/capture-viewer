@@ -92,7 +92,7 @@ Partner Center identity at build time. After an x64 Release build, run:
   -IdentityName "<Package Identity Name>" `
   -Publisher "<Package Publisher>" `
   -PublisherDisplayName "<Publisher display name>" `
-  -Version "1.1.0.0"
+  -Version "1.1.1.0"
 ```
 
 The script requires a Windows 10 or Windows 11 SDK and writes an unsigned
@@ -100,7 +100,9 @@ The script requires a Windows 10 or Windows 11 SDK and writes an unsigned
 file includes the Release PDB as an `.appxsym` when symbols are available.
 Release builds retain compiler and linker optimization while producing a PDB
 for Store crash analysis. The Store workflow treats missing symbols as an
-error.
+error. MSVC's runtime is statically linked, so the installed app does not
+require a separately installed Visual C++ Redistributable. The packaging script
+checks the executable's imports and rejects a dynamic MSVC runtime dependency.
 
 The `MSIX Store package` GitHub Actions workflow accepts the four-part version
 as a manual input and reads these repository secrets:
@@ -270,14 +272,17 @@ Storeパッケージでは、公開可能なManifestテンプレートへビル�
   -IdentityName "<Package Identity Name>" `
   -Publisher "<Package Publisher>" `
   -PublisherDisplayName "<Publisher display name>" `
-  -Version "1.1.0.0"
+  -Version "1.1.1.0"
 ```
 
 Windows 10またはWindows 11 SDKが必要です。`dist-msix\`以下へ無署名の
 `.msix`とStore提出用`.msixupload`を生成します。Release PDBが存在する場合、
 提出ファイルには`.appxsym`としてシンボルも含まれます。Releaseビルドは最適化を
 維持したままStoreのクラッシュ解析用PDBを生成し、Store workflowではシンボルが
-存在しない場合をエラーとして扱います。
+存在しない場合をエラーとして扱います。MSVCランタイムは静的リンクされるため、
+インストール先にVisual C++ Redistributableを別途導入する必要はありません。
+パッケージ作成スクリプトはEXEのインポートを検査し、動的MSVCランタイムへの依存を
+検出した場合は失敗します。
 
 GitHub Actionsの`MSIX Store package`ワークフローは、4部形式のバージョンを
 手動入力として受け取り、次のRepository secretsを使用します。
