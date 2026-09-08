@@ -14,8 +14,14 @@ notes that are intentionally kept out of the public-facing README.
   original `1.1.0.0` package.
 - Packaging rejects any future `MSVCP` or `VCRUNTIME` DLL import before creating
   Store artifacts. GitHub-hosted Windows Release and MSIX builds pass, including
-  the static-runtime dependency check. Final aligned-package hardware validation
-  remains pending.
+  the static-runtime dependency check. The final signed `1.1.1.0` package
+  installed with the expected x64 identity; About reported `1.1.1`. NV12, YUY2,
+  MJPEG, RGB24, audio, horizontal and vertical correction, Settings return,
+  capture restart, and clean shutdown passed the final hardware smoke test.
+  The unsigned MSIX SHA-256 is
+  `165e663ec9dce154e07076d2efafe7a5578a4ac333236a147a506ed9f32883bc`;
+  the Store `.msixupload` SHA-256 is
+  `9018faa2d17e3894a737f34cc0c848b89562a90b77922e24477c08c6497657dd`.
 
 ### v1.1.0 — compatibility and lower video overhead (released)
 
@@ -191,8 +197,8 @@ notes that are intentionally kept out of the public-facing README.
   the corrected binary because changed MSIX contents require a unique package
   identity.
   Packaging also rejects any future `MSVCP` or `VCRUNTIME` DLL import before
-  producing Store artifacts. Corrected-package build and hardware validation
-  remain pending.
+  producing Store artifacts. The corrected package subsequently passed build,
+  dependency, signed-install, and hardware validation as `1.1.1` / `1.1.1.0`.
 
 ### v0.9.0 — first public preview (released)
 
