@@ -45,11 +45,20 @@ if (-not $executable) {
     throw "CaptureView.exe was not found under '$buildRoot'. Build Release first."
 }
 
-$dumpbin = Get-Command dumpbin.exe -ErrorAction SilentlyContinue
-if (-not $dumpbin) {
+$dumpbinCommand = Get-Command dumpbin.exe -ErrorAction SilentlyContinue
+$dumpbinPath = if ($dumpbinCommand) {
+    $dumpbinCommand.Source
+} else {
+    Get-ChildItem `
+        "${env:ProgramFiles}\Microsoft Visual Studio\2022\*\VC\Tools\MSVC\*\bin\Hostx64\x64\dumpbin.exe" `
+        -ErrorAction SilentlyContinue |
+        Sort-Object FullName -Descending |
+        Select-Object -ExpandProperty FullName -First 1
+}
+if (-not $dumpbinPath) {
     throw "dumpbin.exe was not found. Run from a Developer PowerShell for Visual Studio."
 }
-$dependencies = (& $dumpbin.Source /dependents $executable 2>&1) -join "`n"
+$dependencies = (& $dumpbinPath /dependents $executable 2>&1) -join "`n"
 if ($LASTEXITCODE -ne 0) {
     throw "dumpbin failed while checking CaptureView.exe dependencies."
 }
