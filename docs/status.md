@@ -5,7 +5,19 @@ notes that are intentionally kept out of the public-facing README.
 
 ## Release targets
 
-### v1.1.0 — compatibility and lower video overhead (release candidate)
+### v1.1.1 — self-contained Windows runtime (release candidate)
+
+- The application, About dialog, executable metadata, GitHub release, and Store
+  package are aligned on `1.1.1` / `1.1.1.0`. This patch changes MSVC runtime
+  linkage from `/MD` to `/MT`, removing the separately installed Visual C++
+  Redistributable requirement reported during Store certification of the
+  original `1.1.0.0` package.
+- Packaging rejects any future `MSVCP` or `VCRUNTIME` DLL import before creating
+  Store artifacts. GitHub-hosted Windows Release and MSIX builds pass, including
+  the static-runtime dependency check. Final aligned-package hardware validation
+  remains pending.
+
+### v1.1.0 — compatibility and lower video overhead (released)
 
 - Feature development is frozen. Sustained-run, interaction, disconnect /
   reconnect, format-transition, and stream-timeout smoke tests pass on
@@ -175,8 +187,9 @@ notes that are intentionally kept out of the public-facing README.
   actionable failure under policy 10.2.4.1: the submitted executable used
   MSVC's dynamic runtime while the Visual C++ Redistributable dependency was
   not disclosed. The release configuration now statically links the MSVC
-  runtime, and Store package version `1.1.1.0` is reserved for the corrected
-  binary because changed MSIX contents require a unique package identity.
+  runtime. Patch release `1.1.1` and Store package `1.1.1.0` are reserved for
+  the corrected binary because changed MSIX contents require a unique package
+  identity.
   Packaging also rejects any future `MSVCP` or `VCRUNTIME` DLL import before
   producing Store artifacts. Corrected-package build and hardware validation
   remain pending.

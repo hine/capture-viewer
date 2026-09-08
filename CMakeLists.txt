@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(CaptureView VERSION 1.1.0 LANGUAGES CXX)
+project(CaptureView VERSION 1.1.1 LANGUAGES CXX)
 
 # Keep distributed builds self-contained. The default MSVC runtime selection
 # (/MD) requires the Visual C++ Redistributable to be installed separately,
