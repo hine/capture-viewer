@@ -125,6 +125,10 @@ bool CapturePipeline::Start(const std::wstring& device_id,
   dropped_frames_ = 0;
   queue_depth_ = 0;
   callback_count_ = 0;
+  {
+    std::scoped_lock lock(diagnostics_mutex_);
+    diagnostics_ = {};
+  }
   stop_event_ = CreateEventW(nullptr, TRUE, FALSE, nullptr);
   if (!stop_event_) {
     last_error_ = HRESULT_FROM_WIN32(GetLastError());
@@ -132,6 +136,11 @@ bool CapturePipeline::Start(const std::wstring& device_id,
   }
   thread_ = std::thread(&CapturePipeline::CaptureLoop, this, device_id, format);
   return true;
+}
+
+CaptureDiagnostics CapturePipeline::Diagnostics() const {
+  std::scoped_lock lock(diagnostics_mutex_);
+  return diagnostics_;
 }
 
 void CapturePipeline::Stop() {
@@ -208,8 +217,10 @@ void CapturePipeline::CaptureLoop(std::wstring device_id,
     hr = reader->GetNativeMediaType(stream, format.native_index, &native_type);
   }
   if (SUCCEEDED(hr)) {
-    Logger::Instance().Info(
-        L"Video native media type: " + MediaTypeSummary(native_type.Get()));
+    const std::wstring summary = MediaTypeSummary(native_type.Get());
+    Logger::Instance().Info(L"Video native media type: " + summary);
+    std::scoped_lock lock(diagnostics_mutex_);
+    diagnostics_.native_media_type = summary;
   }
   if (SUCCEEDED(hr)) hr = reader->SetCurrentMediaType(stream, nullptr, native_type.Get());
 
@@ -255,8 +266,11 @@ void CapturePipeline::CaptureLoop(std::wstring device_id,
     hr = reader->GetCurrentMediaType(stream, &negotiated_output_type);
   }
   if (SUCCEEDED(hr)) {
-    Logger::Instance().Info(L"Video negotiated output type: " +
-                            MediaTypeSummary(negotiated_output_type.Get()));
+    const std::wstring summary =
+        MediaTypeSummary(negotiated_output_type.Get());
+    Logger::Instance().Info(L"Video negotiated output type: " + summary);
+    std::scoped_lock lock(diagnostics_mutex_);
+    diagnostics_.negotiated_media_type = summary;
   }
   if (FAILED(hr)) {
     if (source) source->Shutdown();

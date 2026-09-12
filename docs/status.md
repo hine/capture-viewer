@@ -27,12 +27,55 @@ notes that are intentionally kept out of the public-facing README.
   `1.1.1.0` package on resubmission, certification passed, and Submission 2 was
   published to the Microsoft Store on September 12, 2026.
 
+### v1.1.2 — diagnostic report (in development)
+
+- Application and executable metadata are aligned on `1.1.2`; the Store package
+  version is reserved as `1.1.2.0`.
+- The right-click menu exposes a user-reviewable, plain-text diagnostic report
+  for hardware-specific problem reports. It summarizes the app, distribution,
+  OS, graphics adapter and renderer path, capture device friendly name and
+  advertised formats grouped by subtype and resolution, selected and
+  negotiated media types, frame/audio statistics, flip settings, and recent
+  capture errors. Nothing is sent or
+  saved automatically. Device IDs, serial numbers, account names, and file
+  paths are intentionally excluded, and the UI asks the user to review device
+  friendly names before sharing. Mouse-wheel scrolling is forwarded to the
+  read-only report view. Copying opens a clear success or failure message and
+  does not close the report window; only the explicit Close action dismisses
+  it.
+- The MSVC x64 Debug and Release builds pass. Release executable file/product
+  versions report `1.1.2`, and the static-runtime dependency check passes. The
+  dedicated report window, mouse-wheel scrolling, grouped 190-mode format
+  display, clipboard content, explicit copy confirmation, and post-copy window
+  retention pass setup-state UI testing. Portable/development detection and
+  the setup-state system, GPU, selected device/format, flip, and audio fields
+  are correct on hardware. A live RGB24 1920x1080/60 session correctly reports
+  the native RGB24-to-BGRA32 renderer path, matching native/negotiated media
+  types including negative stride, 59.9 fps input/render, frame and queue
+  counters, vertical correction, and running 48 kHz stereo audio. After the
+  reproduced MJPEG-to-RGB24 device stall, the setup-state report retains the
+  RGB24 native/negotiated summaries, renderer path, 48 kHz stereo audio format,
+  and localized `0x800705B4` timeout. Zero frames and fps are correct because
+  that session stalled before its first usable frame. NV12, YUY2, MJPEG,
+  RGB24, audio, Settings return/restart, diagnostic-window open/close during
+  capture, and clean shutdown pass the hardware regression check. The unsigned
+  `1.1.2.0` MSIX and symbol-bearing
+  `.msixupload` were generated successfully, including the static-runtime
+  dependency check. Their SHA-256 values are
+  `ff158ce2be223c2acfcb74303bc275902f1468f26c77c3c1e371d6ee093332dc`
+  and `d917759cdf8ddb9bff3bea6aa21bb2b243893f31859d70876da78501c4f23a33`,
+  respectively. A locally signed package installed successfully and reports
+  application version `1.1.2` and distribution `Microsoft Store / MSIX` as
+  expected. Packaged setup-state device, format, graphics, flip, and audio
+  fields also pass hardware verification.
+
 ### v1.1.0 — compatibility and lower video overhead (released)
 
-- Feature development is frozen. Sustained-run, interaction, disconnect /
-  reconnect, format-transition, and stream-timeout smoke tests pass on
-  hardware. Final portable and Store packages have been regenerated and pass
-  packaged-build validation. The release candidate is ready for publication.
+- Released on September 5, 2026. Sustained-run, interaction, disconnect /
+  reconnect, format-transition, and stream-timeout smoke tests passed on
+  hardware. The final portable and Store packages were regenerated and passed
+  packaged-build validation. The rejected Store submission was later replaced
+  by the self-contained `1.1.1.0` package described above.
 
 - The ordered implementation and validation plan is documented in
   [v1.1-roadmap.md](v1.1-roadmap.md).
@@ -197,8 +240,8 @@ notes that are intentionally kept out of the public-facing README.
   actionable failure under policy 10.2.4.1: the submitted executable used
   MSVC's dynamic runtime while the Visual C++ Redistributable dependency was
   not disclosed. The release configuration now statically links the MSVC
-  runtime. Patch release `1.1.1` and Store package `1.1.1.0` are reserved for
-  the corrected binary because changed MSIX contents require a unique package
+  runtime. Patch release `1.1.1` and Store package `1.1.1.0` were assigned to
+  the corrected binary because changed MSIX contents required a unique package
   identity.
   Packaging also rejects any future `MSVCP` or `VCRUNTIME` DLL import before
   producing Store artifacts. The corrected package subsequently passed build,
@@ -218,7 +261,7 @@ notes that are intentionally kept out of the public-facing README.
   and post-publication smoke tests. NV12, MJPEG, WASAPI monitoring, Settings
   return, About, and normal shutdown were included in the verified preview set.
 
-### v1.0.0 — first stable and Store release
+### v1.0.0 — first stable and Store release (released)
 
 - Application, About, and Windows executable metadata are verified as `1.0.0`.
 - The `1.0.0.0` Store package passed Partner Center validation and certification
@@ -239,8 +282,8 @@ notes that are intentionally kept out of the public-facing README.
 Application and Git release versions use three-part Semantic Versioning, such
 as `0.9.0` and tag `v0.9.0`. Microsoft Store MSIX identity uses the equivalent
 four-part form with a Store-reserved zero revision, such as `1.0.0.0`. Because
-an MSIX identity cannot have a zero major version, the first Store package is
-planned for the stable `1.0.0` release rather than the `0.9.x` preview series.
+an MSIX identity cannot have a zero major version, the first Store package used
+the stable `1.0.0` release rather than the `0.9.x` preview series.
 
 | Requirement | Status | Notes |
 |---|---|---|
@@ -256,6 +299,7 @@ planned for the stable `1.0.0` release rather than the `0.9.x` preview series.
 | Manual device refresh | Done | Removal, reconnection, endpoint refresh, format refresh, and available-selection preservation verified on hardware |
 | User settings | Done | `%LOCALAPPDATA%\CaptureView\settings.json` |
 | Logging | Done | Startup, device counts, negotiated video/audio formats, renderer path, bounded periodic statistics, and HRESULT failures |
+| Diagnostic report | Initial verified | Setup, live RGB24, and post-timeout states, mouse-wheel scrolling, format grouping, copy confirmation, clipboard text, privacy exclusions, capture regression, and MSIX distribution detection pass on hardware |
 | D3D11 rendering and aspect fit | Initial verified | RGB32 texture upload, shader display, aspect fit, responsive resize, and window movement verified on Windows |
 | Normal/borderless/fullscreen | Done | Borderless fullscreen; style transitions preserve top-level visibility; no display-mode change |
 | Always on top/context menu/hotkeys | Done | Viewer shell behavior |

@@ -24,6 +24,11 @@ struct VideoFrame {
   std::vector<std::uint8_t> pixels;
 };
 
+struct CaptureDiagnostics {
+  std::wstring native_media_type;
+  std::wstring negotiated_media_type;
+};
+
 class SourceReaderCallback;
 
 class CapturePipeline {
@@ -42,6 +47,7 @@ class CapturePipeline {
   std::uint64_t ReceivedFrames() const { return received_frames_.load(); }
   std::uint64_t DroppedFrames() const { return dropped_frames_.load(); }
   unsigned QueueDepth() const { return queue_depth_.load(); }
+  CaptureDiagnostics Diagnostics() const;
 
  private:
   void CaptureLoop(std::wstring device_id, VideoFormatInfo format);
@@ -63,6 +69,8 @@ class CapturePipeline {
   std::mutex frame_mutex_;
   VideoFrame latest_frame_;
   std::mutex reader_mutex_;
+  mutable std::mutex diagnostics_mutex_;
+  CaptureDiagnostics diagnostics_;
   Microsoft::WRL::ComPtr<IMFMediaSource> source_;
   Microsoft::WRL::ComPtr<IMFSourceReader> reader_;
   VideoFormatInfo active_format_;

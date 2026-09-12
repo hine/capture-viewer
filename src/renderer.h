@@ -17,6 +17,7 @@ class Renderer {
                       UINT width, UINT height, UINT stride);
   bool PrepareNativeYuv(VideoPixelFormat format, UINT width, UINT height);
   void SetFlip(bool horizontal, bool vertical);
+  const std::wstring& AdapterDescription() const { return adapter_description_; }
   void SetSourceSize(UINT width, UINT height) { source_width_ = width; source_height_ = height; }
   void SetOverlay(bool enabled, std::wstring text) {
     overlay_enabled_ = enabled;
@@ -60,6 +61,7 @@ class Renderer {
   Microsoft::WRL::ComPtr<IDWriteFactory> write_factory_;
   Microsoft::WRL::ComPtr<IDWriteTextFormat> overlay_format_;
   std::wstring overlay_text_;
+  std::wstring adapter_description_;
   bool overlay_enabled_ = false;
   bool flip_horizontal_ = false;
   bool flip_vertical_ = false;

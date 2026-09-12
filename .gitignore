@@ -5,6 +5,7 @@
 /dist/
 /dist-msix/
 /dist-msix-test/
+/dist-msix-*/
 /.vs/
 /.vscode/
 *.user

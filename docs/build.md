@@ -92,7 +92,7 @@ Partner Center identity at build time. After an x64 Release build, run:
   -IdentityName "<Package Identity Name>" `
   -Publisher "<Package Publisher>" `
   -PublisherDisplayName "<Publisher display name>" `
-  -Version "1.1.1.0"
+  -Version "1.1.2.0"
 ```
 
 The script requires a Windows 10 or Windows 11 SDK and writes an unsigned
@@ -178,9 +178,9 @@ again from Windows Security.
 For current behavior, see Microsoft's
 [Smart App Control FAQ](https://support.microsoft.com/en-us/windows/security/threat-malware-protection/smart-app-control-frequently-asked-questions).
 
-Official Store builds are planned as MSIX packages signed by Microsoft. Direct
-development and portable builds remain unsigned unless the publisher applies a
-trusted code-signing certificate.
+Official Store builds are distributed as MSIX packages signed by Microsoft.
+Direct development and portable builds remain unsigned unless the publisher
+applies a trusted code-signing certificate.
 
 ---
 
@@ -272,7 +272,7 @@ Storeパッケージでは、公開可能なManifestテンプレートへビル�
   -IdentityName "<Package Identity Name>" `
   -Publisher "<Package Publisher>" `
   -PublisherDisplayName "<Publisher display name>" `
-  -Version "1.1.1.0"
+  -Version "1.1.2.0"
 ```
 
 Windows 10またはWindows 11 SDKが必要です。`dist-msix\`以下へ無署名の
@@ -351,6 +351,6 @@ WindowsセキュリティからSmart App Controlを再度有効化できる場�
 [Smart App Control FAQ](https://support.microsoft.com/en-us/windows/security/threat-malware-protection/smart-app-control-frequently-asked-questions)
 を参照してください。
 
-将来のMicrosoft Store版は、Microsoftが署名するMSIXパッケージとして配布する
-予定です。開発用・ポータブル版は、発行者が信頼されたコード署名証明書を適用
-しない限り無署名です。
+Microsoft Store版は、Microsoftが署名するMSIXパッケージとして配布します。
+開発用・ポータブル版は、発行者が信頼されたコード署名証明書を適用しない限り
+無署名です。

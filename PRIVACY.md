@@ -2,7 +2,7 @@
 
 [日本語](#japanese)
 
-Last updated: September 1, 2026
+Last updated: September 12, 2026
 
 CaptureView processes video and audio locally on the user's Windows device for
 live monitoring.
@@ -40,6 +40,14 @@ application.
 CaptureView does not send these files to the developer. A user may choose to
 attach relevant log excerpts when reporting an issue on GitHub.
 
+The user can also generate and review a plain-text diagnostic report from the
+application menu. It includes device friendly names, device-advertised and
+negotiated video formats, renderer information, operating statistics, settings,
+and recent error results. CaptureView does not save or send this report
+automatically. Device identifiers, serial numbers, account names, and file paths
+are intentionally excluded. Users should review device friendly names and the
+rest of the report before choosing to copy and share it.
+
 ## Contact
 
 Questions and privacy-related requests can be submitted through the public
@@ -51,7 +59,7 @@ Questions and privacy-related requests can be submitted through the public
 
 # CaptureView プライバシーポリシー
 
-最終更新日：2026年9月1日
+最終更新日：2026年9月12日
 
 CaptureViewは、ライブモニタリングのため、ユーザーのWindows端末上で映像と
 音声をローカル処理します。
@@ -88,6 +96,13 @@ MSIXをアンインストールしても、このフォルダーは削除され�
 
 CaptureViewがこれらのファイルを開発者へ送信することはありません。ユーザーは
 GitHubで問題を報告する際に、必要なログの一部を任意で添付できます。
+
+アプリケーションメニューから、プレーンテキストの診断レポートを生成し、内容を
+確認することもできます。レポートには、デバイスの表示名、提示・確定映像
+フォーマット、描画情報、動作統計、設定、直近のエラー結果が含まれます。
+CaptureViewがレポートを自動保存または送信することはありません。デバイス識別子、
+シリアル番号、アカウント名、ファイルパスは意図的に除外します。コピーして共有する
+前に、デバイスの表示名を含むレポート全体を確認してください。
 
 ## お問い合わせ
 

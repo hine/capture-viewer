@@ -52,6 +52,16 @@ HRESULT Renderer::Initialize(HWND window) {
   }
 #endif
   if (SUCCEEDED(hr)) hr = CreateTarget();
+  if (SUCCEEDED(hr)) {
+    Microsoft::WRL::ComPtr<IDXGIDevice> dxgi_device;
+    Microsoft::WRL::ComPtr<IDXGIAdapter> adapter;
+    DXGI_ADAPTER_DESC description{};
+    if (SUCCEEDED(device_.As(&dxgi_device)) &&
+        SUCCEEDED(dxgi_device->GetAdapter(&adapter)) &&
+        SUCCEEDED(adapter->GetDesc(&description))) {
+      adapter_description_ = description.Description;
+    }
+  }
   if (SUCCEEDED(hr)) hr = CreateShaders();
   if (SUCCEEDED(hr)) hr = device_.As(&video_device_);
   if (SUCCEEDED(hr)) hr = context_.As(&video_context_);

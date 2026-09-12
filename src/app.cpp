@@ -1,8 +1,10 @@
 #include "app.h"
 #include "common.h"
+#include "diagnostic_report.h"
 #include "logger.h"
 #include "resource.h"
 #include <algorithm>
+#include <appmodel.h>
 #include <commctrl.h>
 #include <dwmapi.h>
 #include <format>
@@ -29,6 +31,7 @@ constexpr int kMenuFullscreen = 201, kMenuBorderless = 202, kMenuTopmost = 203,
               kMenuMute = 204, kMenuSettings = 205, kMenuExit = 206,
               kMenuOverlay = 207, kMenuAbout = 208,
               kMenuFlipHorizontal = 209, kMenuFlipVertical = 210,
+              kMenuDiagnostics = 211,
               kMenuScale50 = 250, kMenuScale75 = 275,
               kMenuScale100 = 300, kMenuScale125 = 325, kMenuScale150 = 350;
 constexpr COLORREF kSetupBackground = RGB(246, 248, 251);
@@ -36,7 +39,7 @@ constexpr COLORREF kSetupCard = RGB(255, 255, 255);
 constexpr COLORREF kSetupBorder = RGB(218, 224, 232);
 constexpr COLORREF kSetupText = RGB(29, 42, 58);
 constexpr COLORREF kSetupMuted = RGB(101, 113, 128);
-// Shared with the planned blue A icon.
+// Shared with the blue CaptureView icon.
 constexpr COLORREF kAccent = RGB(24, 82, 148);
 constexpr COLORREF kAccentPressed = RGB(17, 63, 116);
 constexpr wchar_t kRepositoryUrl[] = L"https://github.com/hine/capture-viewer";
@@ -159,6 +162,7 @@ LRESULT App::HandleMessage(HWND window, UINT message, WPARAM wparam, LPARAM lpar
           SaveSettings(settings_path_, settings_);
           break;
         case kMenuAbout: ShowAbout(); break;
+        case kMenuDiagnostics: ShowDiagnosticReport(); break;
         case kMenuScale50: SetWindowScale(50); break;
         case kMenuScale75: SetWindowScale(75); break;
         case kMenuScale100: SetWindowScale(100); break;
@@ -221,7 +225,10 @@ LRESULT App::HandleMessage(HWND window, UINT message, WPARAM wparam, LPARAM lpar
         const HRESULT hr = renderer_.RenderFrame(
             frame.format, frame.pixels.data(), frame.width, frame.height,
             frame.stride);
-        if (FAILED(hr)) Logger::Instance().Error(L"Video frame rendering failed", hr);
+        if (FAILED(hr)) {
+          renderer_error_ = hr;
+          Logger::Instance().Error(L"Video frame rendering failed", hr);
+        }
       }
       return 0;
     }
@@ -664,11 +671,13 @@ void App::StartViewer() {
   Logger::Instance().Info(L"Initializing Direct3D renderer");
   const HRESULT hr = renderer_.Initialize(window_);
   if (FAILED(hr)) {
+    renderer_error_ = hr;
     Logger::Instance().Error(L"Direct3D initialization failed", hr);
     MessageBoxW(window_, HResultText(hr).c_str(), L"Direct3D initialization failed", MB_ICONERROR);
     SetWindowTextW(window_, L"CaptureView");
     CreateSetupControls(); return;
   }
+  renderer_error_ = S_OK;
   renderer_.SetSourceSize(format.width, format.height);
   renderer_.SetFlip(settings_.flip_horizontal, settings_.flip_vertical);
   const VideoPixelFormat requested_format =
@@ -684,13 +693,13 @@ void App::StartViewer() {
   const std::wstring native_path_name =
       format.subtype == MFVideoFormat_MJPG ? L"NV12 (MJPEG decode)"
                                            : format.subtype_name;
-  const std::wstring renderer_path =
+  renderer_path_ =
       format.subtype == MFVideoFormat_RGB24
-          ? L"Renderer path: native RGB24 CPU expansion to BGRA32"
-      : native_yuv ? std::format(L"Renderer path: D3D11 Video Processor {}",
-                                 native_path_name)
-                   : std::wstring(L"Renderer path: compatible RGB32");
-  Logger::Instance().Info(renderer_path);
+          ? L"Native RGB24 CPU expansion to BGRA32"
+      : native_yuv ? std::format(L"D3D11 Video Processor {}", native_path_name)
+                   : std::wstring(L"Compatible RGB32");
+  graphics_adapter_ = renderer_.AdapterDescription();
+  Logger::Instance().Info(L"Renderer path: " + renderer_path_);
   const std::wstring video_name = [&] {
     const auto found = std::find_if(videos_.begin(), videos_.end(), [&](const DeviceInfo& device) {
       return device.id == settings_.video_device_id;
@@ -827,6 +836,7 @@ void App::ShowContextMenu(POINT point) {
   AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(flip_menu), L"Flip");
   AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
   AppendMenuW(menu, MF_STRING, kMenuSettings, L"Settings");
+  AppendMenuW(menu, MF_STRING, kMenuDiagnostics, L"Diagnostic Report");
   AppendMenuW(menu, MF_STRING, kMenuAbout, L"About CaptureView");
   AppendMenuW(menu, MF_STRING, kMenuExit, L"Exit");
   TrackPopupMenu(menu, TPM_RIGHTBUTTON, point.x, point.y, 0, window_, nullptr); DestroyMenu(menu);
@@ -862,6 +872,80 @@ void App::ShowAbout() {
   config.pszFooter = license.c_str();
   config.pfCallback = AboutDialogCallback;
   TaskDialogIndirect(&config, nullptr, nullptr, nullptr);
+}
+
+void App::ShowDiagnosticReport() {
+  const auto device_name = [](const std::vector<DeviceInfo>& devices,
+                              const std::wstring& id) {
+    const auto found = std::find_if(
+        devices.begin(), devices.end(),
+        [&](const DeviceInfo& device) { return device.id == id; });
+    return found == devices.end() ? std::wstring{} : found->name;
+  };
+  UINT32 package_length = 0;
+  const LONG package_result = GetCurrentPackageFullName(&package_length, nullptr);
+  const CaptureDiagnostics capture_diagnostics = capture_.Diagnostics();
+  std::wstring video_id = settings_.video_device_id;
+  std::wstring audio_input_id = settings_.audio_input_id;
+  std::wstring audio_output_id = settings_.audio_output_id;
+  const VideoFormatInfo* selected_format = nullptr;
+  if (viewer_mode_) {
+    const auto found = std::find_if(
+        video_formats_.begin(), video_formats_.end(), [&](const auto& format) {
+          return format.width == settings_.video_width &&
+                 format.height == settings_.video_height &&
+                 format.frame_rate_numerator ==
+                     settings_.video_frame_rate_numerator &&
+                 format.frame_rate_denominator ==
+                     settings_.video_frame_rate_denominator &&
+                 format.subtype_name == settings_.video_subtype;
+        });
+    if (found != video_formats_.end()) selected_format = &*found;
+  } else {
+    video_id = SelectedId(video_combo_, videos_);
+    audio_input_id = SelectedId(audio_in_combo_, audio_inputs_);
+    audio_output_id = SelectedId(audio_out_combo_, audio_outputs_);
+    const LRESULT format_index =
+        SendMessageW(video_format_combo_, CB_GETCURSEL, 0, 0);
+    if (format_index >= 0 &&
+        static_cast<size_t>(format_index) < video_formats_.size()) {
+      selected_format = &video_formats_[format_index];
+    }
+  }
+  DiagnosticReportData data;
+  data.app_version = kVersion;
+  data.packaged = package_result == ERROR_INSUFFICIENT_BUFFER ||
+                  package_result == ERROR_SUCCESS;
+  data.viewer_active = viewer_mode_;
+  data.graphics_adapter = graphics_adapter_;
+  data.renderer_path = renderer_path_;
+  data.renderer_error = renderer_error_;
+  data.video_device = device_name(videos_, video_id);
+  if (selected_format) {
+    data.selected_video_format = selected_format->DisplayName();
+  }
+  data.native_media_type = capture_diagnostics.native_media_type;
+  data.negotiated_media_type = capture_diagnostics.negotiated_media_type;
+  data.supported_video_formats = video_formats_;
+  data.input_fps = measured_input_fps_;
+  data.render_fps = measured_fps_;
+  data.received_frames = capture_.ReceivedFrames();
+  data.dropped_frames = capture_.DroppedFrames();
+  data.video_queue_depth = capture_.QueueDepth();
+  data.video_error = capture_.LastError();
+  data.audio_input = device_name(audio_inputs_, audio_input_id);
+  data.audio_output = device_name(audio_outputs_, audio_output_id);
+  data.audio_running = audio_.IsRunning();
+  data.audio_sample_rate = audio_.SampleRate();
+  data.audio_channels = audio_.Channels();
+  data.audio_queue_frames = audio_.QueuedFrames();
+  data.audio_error = audio_.LastError();
+  data.muted = settings_.muted;
+  data.flip_horizontal = settings_.flip_horizontal;
+  data.flip_vertical = settings_.flip_vertical;
+  const std::wstring report = BuildDiagnosticReport(data);
+
+  ShowDiagnosticReportDialog(window_, report);
 }
 
 void App::SaveState() {

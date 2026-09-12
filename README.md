@@ -55,6 +55,7 @@ recording, streaming, scene composition, or single-instance restriction.
 - Optional three-line status overlay for video FPS, audio format, and queue depth
 - Persisted horizontal and vertical display correction
 - Device refresh and graceful recovery when a capture device is disconnected
+- User-reviewable diagnostic report for hardware and capture troubleshooting
 - Persistent device, format, window, and viewer settings
 
 ## Requirements
@@ -106,6 +107,15 @@ capture resolution. Selecting a different capture resolution resets the window
 to 100%; manual resizing is stored as **Custom**.
 
 Settings and logs are stored under `%LOCALAPPDATA%\CaptureView\`.
+
+Choose **Diagnostic Report** from the right-click menu to review and copy a
+plain-text summary for a support request. The report is generated only when
+requested and includes device friendly names, device-advertised and negotiated
+video formats, renderer information, live statistics, settings, and recent errors.
+It is never sent automatically and intentionally omits device IDs, serial
+numbers, account names, and file paths. Review the text before sharing it. The
+copy action shows a completion message and leaves the report window open until
+**Close** is selected.
 
 Some capture devices deliver video upside down or horizontally mirrored, or
 report orientation metadata that does not match the delivered image. The
@@ -196,6 +206,7 @@ CaptureViewは、USB HDMI/UVCキャプチャデバイスの映像と音声を快
 - 映像FPS、音声形式、キュー深度を示す3行ステータスオーバーレイ
 - 保存可能な上下・左右の表示反転補正
 - デバイス一覧の更新と、切断時の設定画面への復帰
+- ハードウェアやキャプチャ問題の報告に利用できる、内容確認可能な診断レポート
 - デバイス、フォーマット、ウィンドウ、表示設定の保存
 
 ## 動作環境
@@ -246,6 +257,14 @@ cmake --build build --config Release
 リサイズした場合は**Custom**として保存します。
 
 設定とログは`%LOCALAPPDATA%\CaptureView\`に保存されます。
+
+右クリックメニューの**Diagnostic Report**を選ぶと、問い合わせに添付できる
+プレーンテキストの診断情報を確認してコピーできます。この情報は操作したときだけ
+生成され、デバイスの表示名、提示・確定映像フォーマット、描画情報、動作統計、設定、
+直近のエラーを含みます。自動送信は行わず、デバイスID、シリアル番号、アカウント名、
+ファイルパスは意図的に収集しません。共有する前に内容を確認してください。
+コピーすると完了メッセージが表示されます。レポート画面は**Close**を選ぶまで
+閉じません。
 
 一部のキャプチャデバイスでは、入力映像が上下反転または左右反転していたり、通知
 される向きの情報と実際の映像が一致しなかったりする場合があります。右クリック

@@ -1,6 +1,6 @@
 # CaptureView UI style
 
-The setup UI and the planned application icon share one restrained blue visual
+The setup UI and application icon share one restrained blue visual
 identity. The icon concept is the circular **A (CV)** mark: a cable-shaped C,
 white V, and deep blue field.
 
@@ -8,7 +8,7 @@ white V, and deep blue field.
 
 | Role | Color | Use |
 |---|---|---|
-| CaptureView blue | `#185294` | Primary action, future icon field, focus accents |
+| CaptureView blue | `#185294` | Primary action, icon field, focus accents |
 | Pressed blue | `#113F74` | Pressed primary action |
 | Canvas | `#F6F8FB` | Setup-window background |
 | Surface | `#FFFFFF` | Device-settings card and secondary action |

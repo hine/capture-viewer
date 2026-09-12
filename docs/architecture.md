@@ -5,7 +5,9 @@
 - One process owns one video capture pipeline. There is deliberately no global mutex or IPC forwarding.
 - Device identity is persisted by Media Foundation symbolic link / WASAPI endpoint ID, not display name.
 - Capture, rendering, and UI are separate components. The capture callback will publish only the newest frame; an older unpublished frame is replaced instead of queued.
-- D3D11 resources are owned by `Renderer`; the forthcoming Media Foundation source-reader path can negotiate a D3D-backed NV12 surface without changing window code.
+- D3D11 resources are owned by `Renderer`; the Media Foundation source-reader
+  path selects native NV12 or YUY2 when the renderer has prepared the matching
+  Video Processor resources.
 - User-facing errors carry a plain-language message while the log retains the HRESULT.
 
 ## Milestones
@@ -13,7 +15,7 @@
 1. **Application shell (implemented):** Win32 lifecycle, MF and COM startup, video/audio endpoint enumeration, selection UI, JSON settings, logging, D3D11 swap chain, aspect-fit viewport and window modes.
 2. **Video MVP (implemented baseline):** native format enumeration/selection (NV12, YUY2, MJPEG, RGB32), asynchronous Source Reader callback, latest-frame handoff, RGB32 texture rendering, and disconnect errors.
 3. **Audio MVP (implemented):** independent WASAPI input/output selection, event-driven shared-mode path, bounded queue, overflow dropping, live mute, and Audio Engine format conversion are implemented and hardware-validated.
-4. **Version 1.1 video efficiency:** YUY2 compatibility validation, native NV12 and YUY2 D3D11 rendering with RGB32 fallback, MJPEG decode-to-NV12 where available, and measured Present behavior.
+4. **Version 1.1 video efficiency (implemented):** YUY2 compatibility validation, native NV12 and YUY2 D3D11 rendering with RGB32 fallback, MJPEG decode-to-NV12 where available, and measured Present behavior.
 5. **Later candidates:** `--profile`, full CLI overrides, optional VSync control, and AV delay.
 
 The capture worker replaces its unpublished frame instead of queuing frames and
@@ -66,6 +68,15 @@ callbacks ceased before another sample entered CaptureView's buffer conversion
 or rendering path. This classification applies to that measured transition and
 does not assume that every black-frame symptom has the same cause.
 
+The diagnostic report is assembled only when requested from the context menu;
+there is no additional monitoring thread, timer, telemetry, automatic file, or
+network operation. The UI thread snapshots existing atomic counters, settings,
+device friendly names and device-advertised formats, capture negotiation summaries,
+the active or last renderer path, and recent HRESULTs. OS and graphics-adapter
+details are queried on demand. Media Foundation symbolic links, WASAPI endpoint
+IDs, serial numbers, account names, and file paths are not placed in the report.
+The generated text is shown before an explicit copy-to-clipboard action.
+
 The initial audio path first tries the selected input endpoint's mix format on
 the output, then tries the output mix format on the input. It then negotiates
 common 48kHz or 44.1kHz stereo float/PCM16 stream formats, letting each shared
@@ -80,7 +91,8 @@ hardware conversion behavior can be verified without a custom resampler.
 The USB capture hardware exposes its HDMI audio separately as `Digital Input
 (USB Digital Audio)`. End-to-end monitoring from that endpoint to an explicitly
 selected output was verified at 48kHz, stereo, 32-bit float. The pipeline logs
-two-second capture/render/queue statistics for diagnosing silence or dropouts.
+bounded periodic capture/render/queue statistics for diagnosing silence or
+dropouts without rapidly growing long-running logs.
 Mute/unmute, Settings stop/restart, and application shutdown were also verified.
 A qualitative viewing/listening test found no obvious AV skew or objectionable
 latency. The approximately 10ms impression is not treated as a measurement;

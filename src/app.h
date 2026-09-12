@@ -31,6 +31,7 @@ class App {
   void SaveState();
   void ShowContextMenu(POINT point);
   void ShowAbout();
+  void ShowDiagnosticReport();
   HWND window_ = nullptr;
   HWND video_combo_ = nullptr, video_format_combo_ = nullptr;
   HWND audio_in_combo_ = nullptr, audio_out_combo_ = nullptr;
@@ -52,6 +53,9 @@ class App {
   double measured_fps_ = 0.0;
   std::chrono::steady_clock::time_point overlay_sample_start_{};
   std::wstring overlay_video_line_;
+  std::wstring renderer_path_;
+  std::wstring graphics_adapter_;
+  HRESULT renderer_error_ = S_OK;
   RECT size_move_start_rect_{};
   WINDOWPLACEMENT restore_placement_{sizeof(WINDOWPLACEMENT)};
 };
