@@ -5,7 +5,7 @@ notes that are intentionally kept out of the public-facing README.
 
 ## Release targets
 
-### v1.1.1 — self-contained Windows runtime (release candidate)
+### v1.1.1 — self-contained Windows runtime (released)
 
 - The application, About dialog, executable metadata, GitHub release, and Store
   package are aligned on `1.1.1` / `1.1.1.0`. This patch changes MSVC runtime
@@ -22,6 +22,10 @@ notes that are intentionally kept out of the public-facing README.
   `165e663ec9dce154e07076d2efafe7a5578a4ac333236a147a506ed9f32883bc`;
   the Store `.msixupload` SHA-256 is
   `9018faa2d17e3894a737f34cc0c848b89562a90b77922e24477c08c6497657dd`.
+- The annotated `v1.1.1` tag and GitHub stable release publish the aligned
+  self-contained portable build. Partner Center accepted the corrected
+  `1.1.1.0` package on resubmission, certification passed, and Submission 2 was
+  published to the Microsoft Store on September 12, 2026.
 
 ### v1.1.0 — compatibility and lower video overhead (released)
 
@@ -248,7 +252,7 @@ planned for the stable `1.0.0` release rather than the `0.9.x` preview series.
 | Windows visual styles | Initial verified | Common Controls v6 flat combo boxes and Per-Monitor DPI V2 manifest verified on Windows at 150% |
 | Application icon | Initial verified | A-concept blue CV/USB mark embedded as a seven-size 16–256px ICO; title-bar and Explorer EXE rendering verified on Windows |
 | About/version/license | Initial verified | Context-menu Task Dialog, `1.0.0` version, Windows EXE metadata, author/brand text, repository link, MIT license link, and reserved brand-asset notice verified on Windows |
-| Distribution | Stable release published | `0.9.0` is published as a GitHub pre-release. `1.0.0` is published as a stable GitHub Release with an Actions-built portable x64 ZIP, SHA-256 checksum, and full MIT text as `LICENSE.txt`; the matching `1.0.0.0` package is published in the Microsoft Store. Local and GitHub-hosted builds produced valid x64 MSIX and `.msixupload` archives with `.appxsym`/PDB symbols using repository secrets. Self-signing, trust setup, installation, camera/microphone consent, capture, Settings return, shutdown, uninstall, and certificate cleanup passed on Windows. WACK 10.0.26100.7705 returned overall `PASS`; its informational Desktop Bridge test noted the intentional `ShellExecuteW` browser-link call. Partner Center validation and certification passed on September 3, 2026. Packaged and portable builds share `%LOCALAPPDATA%\CaptureView\`; uninstall preserves this data |
+| Distribution | Stable release published | `0.9.0` is published as a GitHub pre-release. `1.0.0`, `1.1.0`, and `1.1.1` are published as stable GitHub Releases with Actions-built portable x64 ZIPs and SHA-256 checksums. Store package `1.0.0.0` passed certification and was published on September 3, 2026. After policy 10.2.4.1 identified the previously undisclosed dynamic Visual C++ runtime dependency in `1.1.0.0`, the self-contained `1.1.1.0` replacement passed dependency, signed-install, hardware, Partner Center validation, and certification checks and was published on September 12, 2026. Packaged and portable builds share `%LOCALAPPDATA%\CaptureView\`; uninstall preserves this data |
 | Manual device refresh | Done | Removal, reconnection, endpoint refresh, format refresh, and available-selection preservation verified on hardware |
 | User settings | Done | `%LOCALAPPDATA%\CaptureView\settings.json` |
 | Logging | Done | Startup, device counts, negotiated video/audio formats, renderer path, bounded periodic statistics, and HRESULT failures |
