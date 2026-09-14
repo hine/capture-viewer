@@ -27,7 +27,7 @@ notes that are intentionally kept out of the public-facing README.
   `1.1.1.0` package on resubmission, certification passed, and Submission 2 was
   published to the Microsoft Store on September 12, 2026.
 
-### v1.1.2 — diagnostic report (in development)
+### v1.1.2 — diagnostic report (GitHub released; Store certification in progress)
 
 - Application and executable metadata are aligned on `1.1.2`; the Store package
   version is reserved as `1.1.2.0`.
@@ -59,12 +59,13 @@ notes that are intentionally kept out of the public-facing README.
   that session stalled before its first usable frame. NV12, YUY2, MJPEG,
   RGB24, audio, Settings return/restart, diagnostic-window open/close during
   capture, and clean shutdown pass the hardware regression check. The unsigned
-  `1.1.2.0` MSIX and symbol-bearing
-  `.msixupload` were generated successfully, including the static-runtime
-  dependency check. Their SHA-256 values are
-  `ff158ce2be223c2acfcb74303bc275902f1468f26c77c3c1e371d6ee093332dc`
-  and `d917759cdf8ddb9bff3bea6aa21bb2b243893f31859d70876da78501c4f23a33`,
-  respectively. A locally signed package installed successfully and reports
+  `1.1.2.0` MSIX and symbol-bearing `.msixupload` were generated successfully,
+  including the static-runtime dependency check. The final Actions-built
+  unsigned MSIX SHA-256 is
+  `1fe45b245d304e0dd2697fc989f4eae7286e7393df3ea2634215ac4420139b04`;
+  the final `.msixupload` SHA-256 is
+  `31c9c8cf0858d57e318f9f0c2f28f605f92533bfc2531c40724ce4b4cc08fa5c`.
+  A locally signed package installed successfully and reports
   application version `1.1.2` and distribution `Microsoft Store / MSIX` as
   expected. Packaged setup-state device, format, graphics, flip, and audio
   fields also pass hardware verification.
@@ -81,8 +82,12 @@ notes that are intentionally kept out of the public-facing README.
   already off-screen saved window recovers on startup, closing while minimized
   no longer breaks the next launch, and the affected capture device remains
   responsive during NV12, YUY2, and MJPEG viewing and window interaction. The
-  initial `v1.1.2` draft release and tag were removed before publication and
-  must be regenerated from this corrected source.
+  initial `v1.1.2` draft release and tag were removed before publication, then
+  regenerated from the corrected source after CI passed. The stable GitHub
+  Release was published on September 14, 2026; its portable ZIP SHA-256 is
+  `798689df6bcd83ac86af428a36649b75bda649617728f0f51838fe7454f05ac3`.
+  The verified `1.1.2.0` `.msixupload` was submitted as Partner Center
+  Submission 3 and is in certification as of September 15, 2026.
 
 ### v1.1.0 — compatibility and lower video overhead (released)
 
@@ -310,7 +315,7 @@ the stable `1.0.0` release rather than the `0.9.x` preview series.
 | Windows visual styles | Initial verified | Common Controls v6 flat combo boxes and Per-Monitor DPI V2 manifest verified on Windows at 150% |
 | Application icon | Initial verified | A-concept blue CV/USB mark embedded as a seven-size 16–256px ICO; title-bar and Explorer EXE rendering verified on Windows |
 | About/version/license | Initial verified | Context-menu Task Dialog, `1.0.0` version, Windows EXE metadata, author/brand text, repository link, MIT license link, and reserved brand-asset notice verified on Windows |
-| Distribution | Stable release published | `0.9.0` is published as a GitHub pre-release. `1.0.0`, `1.1.0`, and `1.1.1` are published as stable GitHub Releases with Actions-built portable x64 ZIPs and SHA-256 checksums. Store package `1.0.0.0` passed certification and was published on September 3, 2026. After policy 10.2.4.1 identified the previously undisclosed dynamic Visual C++ runtime dependency in `1.1.0.0`, the self-contained `1.1.1.0` replacement passed dependency, signed-install, hardware, Partner Center validation, and certification checks and was published on September 12, 2026. Packaged and portable builds share `%LOCALAPPDATA%\CaptureView\`; uninstall preserves this data |
+| Distribution | Stable release published; Store update in certification | `0.9.0` is published as a GitHub pre-release. `1.0.0`, `1.1.0`, `1.1.1`, and `1.1.2` are published as stable GitHub Releases with Actions-built portable x64 ZIPs and SHA-256 checksums. Store package `1.0.0.0` passed certification and was published on September 3, 2026. After policy 10.2.4.1 identified the previously undisclosed dynamic Visual C++ runtime dependency in `1.1.0.0`, the self-contained `1.1.1.0` replacement passed dependency, signed-install, hardware, Partner Center validation, and certification checks and was published on September 12, 2026. The verified `1.1.2.0` package is in certification as Submission 3. Packaged and portable builds share `%LOCALAPPDATA%\CaptureView\`; uninstall preserves this data |
 | Manual device refresh | Done | Removal, reconnection, endpoint refresh, format refresh, and available-selection preservation verified on hardware |
 | User settings | Done | `%LOCALAPPDATA%\CaptureView\settings.json` |
 | Logging | Done | Startup, device counts, negotiated video/audio formats, renderer path, bounded periodic statistics, and HRESULT failures |
