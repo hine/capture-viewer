@@ -68,6 +68,21 @@ notes that are intentionally kept out of the public-facing README.
   application version `1.1.2` and distribution `Microsoft Store / MSIX` as
   expected. Packaged setup-state device, format, graphics, flip, and audio
   fields also pass hardware verification.
+- Release preparation uncovered two pre-existing `1.1.1` blockers before
+  publishing `1.1.2`; neither was introduced by the diagnostic-report work.
+  Closing the viewer while minimized could persist the minimized window-icon
+  coordinates and leave the next launch entirely off-screen. Window state now
+  ignores minimized geometry, and startup recovers previously stored geometry
+  that does not intersect any monitor. On one capture device, native YUV paths
+  could also make the UI unresponsive when a busy GPU driver retained the
+  reused staging texture. YUV staging maps are now non-blocking and skip that
+  presentation when the resource is still busy, while the capture pipeline
+  continues retaining the newest frame. Hardware testing confirms that an
+  already off-screen saved window recovers on startup, closing while minimized
+  no longer breaks the next launch, and the affected capture device remains
+  responsive during NV12, YUY2, and MJPEG viewing and window interaction. The
+  initial `v1.1.2` draft release and tag were removed before publication and
+  must be regenerated from this corrected source.
 
 ### v1.1.0 — compatibility and lower video overhead (released)
 

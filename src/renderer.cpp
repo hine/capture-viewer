@@ -304,8 +304,13 @@ HRESULT Renderer::RenderYuv(VideoPixelFormat format,
   source_width_ = width;
   source_height_ = height;
   D3D11_MAPPED_SUBRESOURCE mapped{};
-  hr = context_->Map(yuv_staging_texture_.Get(), 0, D3D11_MAP_WRITE, 0,
-                     &mapped);
+  // This renderer runs on the UI thread. Reusing the staging texture can
+  // otherwise block here while a busy driver is still consuming the previous
+  // upload, making window movement and controls unresponsive. Dropping one
+  // presentation is preferable; the capture pipeline retains the newest frame.
+  hr = context_->Map(yuv_staging_texture_.Get(), 0, D3D11_MAP_WRITE,
+                     D3D11_MAP_FLAG_DO_NOT_WAIT, &mapped);
+  if (hr == DXGI_ERROR_WAS_STILL_DRAWING) return S_FALSE;
   if (FAILED(hr)) return hr;
   const UINT row_bytes =
       width * (format == VideoPixelFormat::Yuy2 ? 2u : 1u);

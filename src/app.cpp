@@ -68,11 +68,36 @@ void SelectSaved(HWND combo, const std::vector<DeviceInfo>& devices, const std::
   SendMessageW(combo, CB_SETCURSEL, found == devices.end() ? (devices.empty() ? -1 : 0)
                                                         : std::distance(devices.begin(), found), 0);
 }
+
+void RecoverStoredWindowRect(RECT& rect) {
+  LONG width = rect.right - rect.left;
+  LONG height = rect.bottom - rect.top;
+  if (width <= 0 || height <= 0) {
+    width = 960;
+    height = 540;
+  }
+  if (MonitorFromRect(&rect, MONITOR_DEFAULTTONULL)) return;
+
+  POINT origin{};
+  MONITORINFO monitor{sizeof(monitor)};
+  if (GetMonitorInfoW(MonitorFromPoint(origin, MONITOR_DEFAULTTOPRIMARY),
+                      &monitor)) {
+    const LONG inset = MulDiv(80, GetDpiForSystem(), 96);
+    rect.left = monitor.rcWork.left + inset;
+    rect.top = monitor.rcWork.top + inset;
+  } else {
+    rect.left = 100;
+    rect.top = 100;
+  }
+  rect.right = rect.left + width;
+  rect.bottom = rect.top + height;
+}
 }
 
 int App::Run(HINSTANCE instance, int show_command) {
   settings_path_ = AppDataRoot() / L"settings.json";
   settings_ = LoadSettings(settings_path_);
+  RecoverStoredWindowRect(settings_.window);
   videos_ = EnumerateVideoDevices();
   audio_inputs_ = EnumerateAudioInputs();
   audio_outputs_ = EnumerateAudioOutputs();
@@ -296,7 +321,8 @@ LRESULT App::HandleMessage(HWND window, UINT message, WPARAM wparam, LPARAM lpar
       if (viewer_mode_ && !fullscreen_) GetWindowRect(window_, &size_move_start_rect_);
       return 0;
     case WM_EXITSIZEMOVE:
-      if (viewer_mode_ && !fullscreen_ && !programmatic_resize_) {
+      if (viewer_mode_ && !fullscreen_ && !programmatic_resize_ &&
+          !IsIconic(window_)) {
         RECT rect{};
         if (GetWindowRect(window_, &rect)) {
           const LONG old_width = size_move_start_rect_.right - size_move_start_rect_.left;
@@ -949,7 +975,7 @@ void App::ShowDiagnosticReport() {
 }
 
 void App::SaveState() {
-  if (viewer_mode_ && !fullscreen_) {
+  if (viewer_mode_ && !fullscreen_ && !IsIconic(window_)) {
     RECT rect{}; if (GetWindowRect(window_, &rect)) settings_.window = rect;
   }
   SaveSettings(settings_path_, settings_);
