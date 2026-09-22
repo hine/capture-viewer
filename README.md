@@ -1,24 +1,24 @@
-# CaptureView
+# CaptureView — UVC / USB Capture Viewer for Windows
 
 [日本語](#japanese)
 
-CaptureView is a lightweight native Windows viewer designed for responsive
-video and audio monitoring from USB HDMI/UVC capture devices.
+**A lightweight, focused UVC and USB capture card viewer for Windows.**
 
-It focuses on the essentials: select a video device and format, choose audio
-input and output endpoints independently, and start monitoring. It has no
-recording, streaming, scene composition, or single-instance restriction.
+CaptureView lets you monitor video and audio from HDMI capture cards, USB video
+capture devices, and UVC cameras without the complexity of recording or
+streaming software.
 
-> CaptureView is under active development. See the
-> [implementation status](docs/status.md) for verified hardware coverage and
-> remaining work.
+It is built for the moments when you simply need to see and hear a capture
+source—from game consoles and cameras to Raspberry Pi, FPGA, embedded systems,
+microscopes, and other HDMI output devices connected through a compatible USB
+capture device.
 
 ## Screenshots
 
 ![CaptureView previewing a USB capture source](docs/images/captureview-preview.png)
 
 <details>
-<summary>Viewer controls, capture setup, and About</summary>
+<summary>Viewer controls and capture setup</summary>
 
 <p align="center">
   <img src="docs/images/captureview-viewer-controls.png" width="960" alt="CaptureView viewer menu and status overlay">
@@ -26,10 +26,6 @@ recording, streaming, scene composition, or single-instance restriction.
 
 <p align="center">
   <img src="docs/images/captureview-setup.png" width="720" alt="CaptureView capture setup window">
-</p>
-
-<p align="center">
-  <img src="docs/images/captureview-about.png" width="420" alt="CaptureView 1.0.0 About window">
 </p>
 
 </details>
@@ -40,6 +36,28 @@ recording, streaming, scene composition, or single-instance restriction.
   for Store-managed installation and updates
 - [GitHub Releases](https://github.com/hine/capture-viewer/releases) — portable
   x64 ZIP builds
+
+## Why CaptureView?
+
+Full recording and streaming suites are powerful, but they can be more than
+necessary when the goal is simply to monitor a capture device.
+
+CaptureView focuses on that job. It avoids recording, streaming, and scene
+composition while retaining the practical controls needed for everyday
+viewing: audio monitoring, fullscreen and always-on-top modes,
+capture-relative sizing, flip correction, persistent settings, device
+recovery, and a diagnostic report.
+
+Everything you need to view a capture device. Nothing you don't.
+
+## Use cases
+
+- HDMI capture cards and USB video capture devices
+- Game console monitoring
+- Raspberry Pi and other single-board computers
+- FPGA, microcontroller, and embedded-system development
+- HDMI output testing and debugging
+- UVC cameras, microscopes, and inspection cameras
 
 ## Features
 
@@ -148,13 +166,12 @@ or otherwise transmit captured video or audio.
 See the [CaptureView Privacy Policy](PRIVACY.md) for details about permissions,
 local settings and logs, and data removal.
 
-## Why this project exists
+## Development
 
-The developer wanted a simple tool that provided the specific capture-viewing
-features needed without the complexity of a full recording or streaming suite,
-but could not find a good fit. CaptureView was therefore created with the help
-of AI. Product decisions, scope, hardware testing, and acceptance of the
-implementation are performed by the developer.
+CaptureView was created with the help of AI. Product decisions, scope, hardware
+testing, and acceptance of the implementation are performed by the developer.
+See the [implementation status](docs/status.md) for verified hardware coverage
+and current development details.
 
 ## License
 
@@ -173,17 +190,16 @@ forks and derived products must use their own name and visual identity. See
 
 <a id="japanese"></a>
 
-# CaptureView（日本語）
+# CaptureView — Windows向けUVC／USBキャプチャービューアー
 
-CaptureViewは、USB HDMI/UVCキャプチャデバイスの映像と音声を快適に
-モニタリングできるよう応答性を重視した、軽量なWindowsネイティブビューアーです。
+**USBキャプチャーデバイスを「見る」ことに集中した、軽量なWindows用ビューアーです。**
 
-映像デバイスとフォーマットを選び、音声の入力・出力を個別に指定して表示を
-開始する、という基本機能に集中しています。録画、配信、シーン合成、単一起動
-制限は備えていません。
+HDMIキャプチャーボード、USBビデオキャプチャーデバイス、UVCカメラの映像と
+音声を、録画・配信ソフトの複雑な設定なしでモニタリングできます。
 
-> CaptureViewは現在も開発中です。実機確認済みの範囲と今後の作業は
-> [実装状況](docs/status.md)を参照してください。
+ゲーム機やカメラだけでなく、Raspberry Pi、FPGA、組み込み機器、顕微鏡、
+その他のHDMI出力機器を、対応するUSBキャプチャーデバイス経由で手軽に確認
+したい場面を想定しています。
 
 ## 入手方法
 
@@ -191,6 +207,27 @@ CaptureViewは、USB HDMI/UVCキャプチャデバイスの映像と音声を快
   Storeによるインストールと更新を利用する推奨版
 - [GitHub Releases](https://github.com/hine/capture-viewer/releases) —
   ポータブルx64 ZIP版
+
+## CaptureViewを作った理由
+
+録画・配信ソフトは高機能ですが、目的がキャプチャーデバイスの映像と音声を確認
+することだけなら、必要以上に大きな仕組みになる場合があります。
+
+CaptureViewはその用途に集中しています。録画、配信、シーン合成を持たない一方、
+音声モニタリング、フルスクリーン、常に手前に表示、キャプチャー解像度基準の
+サイズ指定、反転補正、設定保存、デバイス復旧、診断レポートなど、日常的な表示に
+必要な機能を備えています。
+
+「見るだけ」に、ちょうどいい。
+
+## 用途例
+
+- HDMIキャプチャーボード、USBビデオキャプチャーデバイス
+- ゲーム機の映像・音声確認
+- Raspberry Piなどのシングルボードコンピューター
+- FPGA、マイコン、組み込み機器の開発
+- HDMI出力機器の動作確認・デバッグ
+- UVCカメラ、顕微鏡、検査用カメラ
 
 ## 特徴
 
@@ -294,11 +331,11 @@ Store版では、これらの機能を初めて使用するときにWindowsが�
 権限、ローカルの設定・ログ、データ削除については
 [CaptureViewプライバシーポリシー](PRIVACY.md)を参照してください。
 
-## 開発の経緯
+## 開発について
 
-開発者自身が欲しいキャプチャ表示機能をシンプルに実装した、ちょうどよいツールを
-見つけられなかったことから、AIの力を借りてCaptureViewを作り始めました。
+CaptureViewはAIの力を借りて開発しています。
 製品の方向性、機能範囲、実機テスト、実装結果の受け入れ判断は開発者が行っています。
+実機確認済みの範囲と現在の開発状況は[実装状況](docs/status.md)を参照してください。
 
 ## ライセンス
 
